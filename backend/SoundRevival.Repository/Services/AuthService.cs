@@ -98,6 +98,7 @@ namespace SoundRevival.Repository.Services
                 DisplayName = user.DisplayName,
                 Role = user.Role
             };
+
         }
     }
 }

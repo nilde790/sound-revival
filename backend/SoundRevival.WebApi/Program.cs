@@ -1,12 +1,16 @@
 
 using Microsoft.EntityFrameworkCore;
 using SoundRevival.Repository;
+using SoundRevival.Repository.Interfaces;
+using SoundRevival.Repository.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add services to the container.
+
+builder.Services.AddScoped<IAuthService,AuthService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
