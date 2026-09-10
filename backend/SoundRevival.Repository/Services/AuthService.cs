@@ -15,19 +15,19 @@ namespace SoundRevival.Repository.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly AppDbContext _context;
+        private readonly IUserRepository _repository;
         private readonly IConfiguration _configuration;
 
-        public AuthService(AppDbContext context, IConfiguration configuration)
+        public AuthService(IUserRepository repo, IConfiguration configuration)
         {
-            _context = context;
+            _repository = repo;
             _configuration = configuration;
             
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            var existingUser = await _repository.FindUserByEmail(request.Email);
 
             if(existingUser != null)
             {
@@ -45,15 +45,15 @@ namespace SoundRevival.Repository.Services
 
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            _repository.AddUser(user);
+            await _repository.SaveChangesAsync();
 
             return GenerateAuthResponse(user);
           
         }
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            var user = await _repository.FindUserByEmail(request.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
