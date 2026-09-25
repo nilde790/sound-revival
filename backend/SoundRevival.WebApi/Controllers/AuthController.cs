@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Repository.Interfaces;
+using System.Security.Claims;
 
 namespace SoundRevival.WebApi.Controllers
 {
@@ -43,6 +45,14 @@ namespace SoundRevival.WebApi.Controllers
             {
                 return Unauthorized(new { error = ex.Message });
             }
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public IActionResult Me()
+        {
+            var nome = User.FindFirst(ClaimTypes.NameIdentifier);
+            return Ok(nome?.Value);
         }
 
     }
