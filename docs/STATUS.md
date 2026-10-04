@@ -40,7 +40,7 @@ categories).
 | Frontend state | React Query (server state) + Context (auth) + `useState` (local UI) |
 | Image storage | Cloudinary — only the URL is persisted in `images` (**not started**) |
 | Containerization | Docker Compose (Postgres now; backend/frontend to be added) |
-| Testing | xUnit + Moq (backend unit), EF Core + real Postgres container (backend integration), Vitest + RTL (frontend) |
+| Testing | xUnit + Moq (backend unit — **AuthService done**), EF Core + real Postgres container (backend integration — **not started**), Vitest + RTL (frontend — not started) |
 | CI/CD | GitHub Actions, `.github/workflows/` — **folder exists, empty** |
 
 Key ADRs (see `docs/adr/`): separate C# backend + React frontend
@@ -50,25 +50,28 @@ server sessions (ADR-003).
 ## 3. Backend architecture
 
 Multi-project solution, physically separated layers (not just folders):
+SoundRevival.WebApi → Controllers, HTTP concerns, auth middleware. No business logic.
+SoundRevival.Repository → Interfaces/ (contracts, e.g. IUserRepository, IAuthService)
+Services/ (business logic + EF Core access)
+Repository/ (EF Core implementations)
+Entities/ (User, Listing, Image)
+SoundRevival.Dto → request/response DTOs, decoupled from entities
+SoundRevival.Tests → xUnit + Moq, targets Repository layer via interfaces
 
-```
-SoundRevival.WebApi         → Controllers, HTTP concerns, auth middleware. No business logic.
-SoundRevival.Repository     → Interfaces/  (contracts, e.g. IUserRepository, IAuthService)
-                               Services/    (business logic + EF Core access)
-                               Repository/  (EF Core implementations)
-                               Entities/    (User, Listing, Image)
-SoundRevival.Dto            → request/response DTOs, decoupled from entities
-SoundRevival.Tests          → xUnit + Moq, targets Repository layer via interfaces
-```
 
 Dependency direction: `WebApi → Repository (via interfaces) + Dto` ·
 `Repository → Dto`. Controllers never touch the DB directly.
 
+**JWT middleware** (`Program.cs`): `AddAuthentication` + `AddJwtBearer`
+configured and validated; `app.UseAuthentication()` before
+`app.UseAuthorization()`, before `MapControllers()`. Verified end-to-end
+via a temporary `[Authorize]` test endpoint (now removed): 401 without
+token, 200 with valid token and correct claims read back.
+
 ## 4. Domain model (compact)
 
-```
 User (1) ──< Listing (many) ──< Image (many, max 5 per listing)
-```
+
 
 - **User**: id, email (unique), passwordHash, displayName, role
   (`user`|`admin`, default `user`), createdAt
@@ -85,8 +88,8 @@ in the service layer, not a DB constraint.
 
 | Method | Endpoint | Auth | Status |
 |---|---|---|---|
-| POST | `/api/auth/register` | No | ✅ implemented |
-| POST | `/api/auth/login` | No | ✅ implemented |
+| POST | `/api/auth/register` | No | ✅ implemented + unit tested |
+| POST | `/api/auth/login` | No | ✅ implemented + unit tested |
 | GET/PUT | `/api/users/me` | Yes | ⬜ not started |
 | GET | `/api/listings` (paginated, filterable) | No | ⬜ not started |
 | GET | `/api/listings/{id}` | No | ⬜ not started |
@@ -109,7 +112,7 @@ interceptor in `shared/lib/axios.ts`. Routing: `/`, `/listings/:id`,
 
 ## 7. CURRENT STATE — what's actually built
 
-**`feature/auth` branch: complete and verified.**
+**`feature/auth` branch: complete, tested, and cleaned up.**
 
 - Entities (`User`, `Listing`, `Image`), `AppDbContext`, initial EF Core
   migration applied to Postgres
@@ -117,37 +120,51 @@ interceptor in `shared/lib/axios.ts`. Routing: `/`, `/listings/:id`,
   (register + login), BCrypt hashing
 - Repository pattern in place: `IUserRepository` / `UserRepository`
   (Moq-testable), registered in `Program.cs` via `AddScoped`
-- Register + login manually verified via Postman; DB rows verified via
-  DBeaver; re-verified end-to-end after a full machine rebuild
-- **A PR (`feature/auth → main`) was opened on GitHub and was pending
-  the CI/mergeability check as of the last session — verify/merge
-  status before starting new work**
+- JWT middleware (`AddAuthentication`/`AddJwtBearer`,
+  `UseAuthentication`/`UseAuthorization`) added to `Program.cs` and
+  verified end-to-end
+- 5 unit tests (xUnit + Moq) on `AuthService`, all passing:
+  `LoginAsync` (valid credentials / user not found / wrong password),
+  `RegisterAsync` (email already exists / successful registration)
+- Debug-only code (`IncludeErrorDetails`, auth event logging) and the
+  temporary `/api/auth/me` diagnostic endpoint have been removed
+- Register + login manually re-verified via Postman; DB rows verified
+  via DBeaver
+
+**PR status**: a PR (`feature/auth → main`) was opened and the earlier
+mergeability/CI block was checked and resolved — **confirm the merge
+itself has actually been completed on GitHub before starting Listings**,
+since the chat history doesn't show an explicit "merged" confirmation.
 
 **Not started**: Listings CRUD, Image upload/Cloudinary, any
-frontend code, CI pipeline content, deployment.
+frontend code, CI pipeline content, deployment, backend integration
+tests (EF Core + real Postgres container — infra not yet set up).
 
 ## 8. Known open items / technical debt
 
-- `Program.cs` may be missing `AddAuthentication().AddJwtBearer(...)`
-  and `app.UseAuthentication()` before `app.UseAuthorization()` — JWT
-  validation setup currently seems to live only in `AuthService.cs`;
-  **needs verification before protected endpoints (listings) are built**
-- NU1903 security warning on `Microsoft.OpenApi` v2.0.0 — deferred
+- Integration test infrastructure (e.g. Testcontainers + real Postgres)
+  not yet set up — needed for the "integration" half of the testing
+  strategy in `10-Testing.md`; can be introduced now (quick win on Auth)
+  or deferred to Listings (more to actually test)
+- NU1903 security warning on `Microsoft.OpenApi` v2.0.0 — deferred to a
+  dedicated commit, not yet done
 - Possible `dotnet-ef` global tool ↔ project EF Core version mismatch
   warnings (cosmetic so far)
-- xUnit + Moq unit tests for `AuthService` not yet written
+- Confirm the `feature/auth → main` merge is actually completed on
+  GitHub
 
 ## 9. Roadmap — next in sequence
 
-1. Unit tests for `AuthService` (xUnit + Moq, mock `IUserRepository`)
-2. Merge `feature/auth` → `main`
-3. Listings CRUD: `IListingRepository`/service, DTOs, controller
+1. Confirm `feature/auth → main` merge is complete
+2. NU1903 fix (dedicated commit)
+3. Decide: set up integration test infra now, or defer to Listings
+4. Listings CRUD: `IListingRepository`/service, DTOs, controller
    (`POST/GET/PUT/DELETE /api/listings`), JWT owner-only authorization
-4. Image upload via Cloudinary
-5. React frontend (Vite + TS) — auth flow, homepage, listing detail,
+5. Image upload via Cloudinary
+6. React frontend (Vite + TS) — auth flow, homepage, listing detail,
    create/edit form, profile page
-6. Populate GitHub Actions CI (`.github/workflows/`)
-7. Deployment (backend+DB, frontend) — platform TBD
+7. Populate GitHub Actions CI (`.github/workflows/`)
+8. Deployment (backend+DB, frontend) — platform TBD
 
 v2 (explicitly deferred): in-app messaging, simulated payments, admin
 moderation dashboard, dynamic categories. Explicitly out of scope
@@ -164,6 +181,9 @@ forever: real payments, real shipping, multi-language.
   implementation started
 - Verification ritual after significant changes: Postman (API) +
   DBeaver (DB state) before moving to the next feature
+- Unit tests (xUnit + Moq) written per service as logic is completed,
+  following the Arrange-Act-Assert pattern, mocking repository
+  interfaces rather than hitting a real DB
 - Tools: Visual Studio + PowerShell, DBeaver, Postman, Docker Desktop
   (WSL2) + Compose, Git/GitHub
 - `appsettings.Development.json` is gitignored — must be recreated by
@@ -172,6 +192,6 @@ forever: real payments, real shipping, multi-language.
   and the global `dotnet-ef` tool
 
 ---
-*Last updated: reflects state as of 2026‑09‑24. Regenerate/update this
+*Last updated: reflects state as of 2026‑10‑04. Regenerate/update this
 file whenever the project state changes meaningfully — outdated status
 here is worse than no status at all.*

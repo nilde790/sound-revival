@@ -47,13 +47,5 @@ namespace SoundRevival.WebApi.Controllers
             }
         }
 
-        [HttpGet("me")]
-        [Authorize]
-        public IActionResult Me()
-        {
-            var nome = User.FindFirst(ClaimTypes.NameIdentifier);
-            return Ok(nome?.Value);
-        }
-
     }
 }
