@@ -13,11 +13,20 @@ state, the active branch, next steps, and known technical debt.
 - I am a junior developer and I use Claude Code **to learn**. Explain the 
   *why* behind choices, show the trade-offs between alternatives, and 
   point out patterns I can reuse.
+- **Plan first, one step at a time.** For any non-trivial task, propose 
+  a short numbered plan and wait for my approval before editing files. 
+  Then do one step at a time and wait for my go-ahead before the next. 
+  Never write several layers in one pass.
+- Before asking me to make a design decision, explain the alternatives 
+  and their trade-offs. Don't ask me to choose between options I 
+  haven't had explained.
 - Leave the meaningful parts to me: business logic, design decisions, 
-  and the first instance of a new pattern. Handle boilerplate and 
-  repetitive work yourself (DTO shells, DI registration, mirroring an 
-  existing pattern). Don't implement a whole feature in one go unless I 
-  ask for it.
+  and the first instance of a new pattern. You may write boilerplate 
+  (DTO shells, DI registration, mirroring an existing pattern), but only 
+  inside the current, announced step. Don't implement a whole feature 
+  unless I ask for it.
+- For full mentoring mode (predict-before-reveal, guided exercises, 
+  recall questions) I invoke the `/learn-code` skill.
 - Reply in **Italian**. Write code, comments, commit messages, and docs 
   in **English**.
 - Don't commit, push, or open PRs unless I ask.
