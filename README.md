@@ -1,69 +1,96 @@
 # SoundRevival
 
-One-line description of the project (e.g., *"Marketplace for buying and selling musical instruments between individuals."*)
+A vertical marketplace for buying and selling used musical instruments 
+between private users and small shops.
+
+> 🚧 **Work in progress** — portfolio case study. Backend authentication 
+> is complete; listings CRUD is under development. See 
+> [docs/STATUS.md](docs/STATUS.md) for the current state.
 
 ## 🎯 What It Does
 
-Provide a brief overview (2–3 lines) of the project's core functionality, such as:
+Generic marketplaces bury instrument listings among thousands of 
+unrelated categories. SoundRevival focuses only on instruments, with 
+categories and filters designed for this domain.
 
-- User registration and authentication
-- Creating and managing listings
-- Searching and filtering listings
-- Messaging between buyers and sellers
-- Favorites, reviews, or other key features
-
-## 🖼️ Demo / Screenshots
-
-> GIFs or screenshots from `assets/images` will be added here as the project evolves.
+- User registration and JWT authentication ✅
+- Creating, editing and deleting listings, marking them as sold 🚧
+- Searching and filtering by category, keyword and price, with pagination ⬜
+- Up to 5 photos per listing, stored on Cloudinary ⬜
+- Admin moderation of listings ⬜
 
 ## 🛠️ Tech Stack
 
-A concise list of the technologies used in the project, including:
+| Layer | Technologies |
+|---|---|
+| Backend | C# · ASP.NET Core Web API (.NET 10) · Entity Framework Core (Code First) |
+| Database | PostgreSQL 16 (Docker) |
+| Auth | JWT · BCrypt |
+| Testing | xUnit · Moq |
+| Frontend *(planned)* | React · Vite · TypeScript · React Query · Axios |
+| Infra *(planned)* | Docker Compose · GitHub Actions · Cloudinary |
 
-- Programming languages
-- Frameworks
-- Database
-- Development tools
-
-> This section will be completed alongside `docs/06-Architecture.md`.
+The backend is a multi-project solution with physically separated layers 
+(`WebApi` → `Repository` → `Dto`), repository + service pattern and 
+interface-based dependency injection. See 
+[docs/06-Architecture.md](docs/06-Architecture.md).
 
 ## 🚀 Running Locally
 
-Step-by-step instructions for running the project locally.
+**Prerequisites**: .NET 10 SDK, Docker Desktop, `dotnet-ef` 
+(`dotnet tool install --global dotnet-ef`).
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/nilde790/sound-revival.git
+cd sound-revival
 
-# Navigate into the project
-cd <project-folder>
-
-# Install dependencies
-...
-
-# Configure environment variables
-...
-
-# Start the application
-...
+# Start PostgreSQL
+docker compose up -d
 ```
 
-> This section will be expanded as the project grows.
+Create `backend/SoundRevival.WebApi/appsettings.Development.json` 
+(gitignored):
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=soundrevival;Username=postgres;Password=postgres"
+  },
+  "Jwt": {
+    "Key": "<random secret, at least 32 characters>",
+    "Issuer": "SoundRevival",
+    "Audience": "SoundRevivalUsers",
+    "ExpiryMinutes": 60
+  }
+}
+```
+
+```bash
+cd backend
+
+# Apply migrations
+dotnet ef database update --project SoundRevival.Repository --startup-project SoundRevival.WebApi
+
+# Run the API (http://localhost:5150)
+dotnet run --project SoundRevival.WebApi
+
+# Run tests
+dotnet test SoundRevival.slnx
+```
+
+Sample requests are in `backend/SoundRevival.WebApi/SoundRevival.WebApi.http`.
 
 ## 📁 Documentation
 
-For a deeper understanding of the project's architecture and design decisions, see:
+The project was designed docs-first. Start from 
+[docs/00-README.md](docs/00-README.md): vision, requirements, domain 
+model, database, architecture, API contracts, frontend design, roadmap, 
+testing strategy, and Architecture Decision Records in 
+[docs/adr/](docs/adr/).
 
-- `docs/00-README.md`
+## 🎓 Project Goals
 
-## 🎓 What I Learned / Project Goals
-
-Describe the purpose of the project and the skills you aimed to develop.
-
-Example:
-
-> This project was built to strengthen my skills in full-stack web development, software architecture, authentication, REST APIs, and modern development workflows.
-
-## 📄 License
-
-Specify the project's license here (e.g., MIT License).
+This project was built to practice the full lifecycle of a software 
+project — from requirements and architecture to implementation, testing 
+and deployment — with professional practices: ADRs, feature branches, 
+pull requests, layered architecture, and automated tests.

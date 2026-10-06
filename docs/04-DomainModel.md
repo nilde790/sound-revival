@@ -40,7 +40,7 @@ to 5 images.
 
 **Attributes:**
 - id
-- url (or file path, depending on storage choice — see 06-Architecture.md)
+- url (Cloudinary URL — see 05-Database.md → Image storage strategy)
 - displayOrder (to control image order in the gallery)
 
 ## Relationships
@@ -51,9 +51,11 @@ to 5 images.
 - **Listing → Image**: one-to-many  
   A listing can have up to 5 images; each image belongs to exactly one listing.
 
-  User (1) ──────< (many) Listing (1) ──────< (many) Image
+```
+User (1) ──────< (many) Listing (1) ──────< (many) Image
+```
 
-  ## Glossary (fixed enums)
+## Glossary (fixed enums)
 
 **Category** (fixed list, not a separate entity):
 - Guitars
@@ -70,13 +72,13 @@ to 5 images.
 - Fair
 - Poor
 
-**Listing status**:
-- Available
-- Sold
+**Listing status** (stored lowercase):
+- `available` (default)
+- `sold`
 
-**User role**:
-- User (default)
-- Admin (assigned manually, not selectable at registration)
+**User role** (stored lowercase):
+- `user` (default)
+- `admin` (assigned manually, not selectable at registration)
 
 ## Notes on design choices
 
@@ -93,7 +95,7 @@ to 5 images.
   independent metadata) — this maps naturally to a one-to-many 
   relationship in a relational database.
 
-  - **A single `email` field is used** both for login and as the contact 
+- **A single `email` field is used** both for login and as the contact 
   reference shown to buyers, keeping the model simpler. If needed in the 
   future, a separate public contact field could be introduced without 
   breaking this structure.

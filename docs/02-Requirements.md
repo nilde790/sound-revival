@@ -16,9 +16,10 @@
 - **FR-7**: A user must be able to edit or delete their own listings
 - **FR-8**: A listing must have a status: `available` or `sold`
 - **FR-9**: A user must be able to mark their own listing as `sold`
-- **FR-10**: A sold listing must remain visible but clearly marked as sold, 
-  or be excluded from default search results (decision to confirm in 
-  08-Frontend-Design.md)
+- **FR-10**: Sold listings are excluded from default search results 
+  (`GET /api/listings` defaults to `status=available`, see 
+  07-API-Design.md), but remain reachable by direct link and are 
+  clearly marked as sold
 
 ### Search & Browsing
 - **FR-11**: Any visitor (logged in or not) must be able to view the 
@@ -34,6 +35,12 @@
 - **FR-16**: The system must support a predefined set of instrument 
   categories (e.g. Guitars, Keyboards, Drums, Wind Instruments, Strings, 
   Other)
+
+### Roles
+- **FR-17**: Every new user is registered with role `user`; the `admin` 
+  role is assigned manually and cannot be chosen at registration
+- **FR-18**: An admin must be able to edit or delete any listing, 
+  regardless of owner
 
 ## Non-Functional Requirements
 
@@ -64,7 +71,7 @@
 - **NFR-8**: The application must be deployable via Docker 
   (docker-compose.yml at the root) to ensure reproducibility
 
-  ### CI/CD
+### CI/CD
 - **NFR-9**: Every push/pull request must trigger an automated pipeline 
   that runs linting and tests before allowing merge to `main`
 - **NFR-10**: The pipeline must be configured via GitHub Actions, stored 

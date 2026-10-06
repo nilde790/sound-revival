@@ -8,7 +8,7 @@ specific domain concept lives together. This scales better as the
 project grows, since working on "listings" doesn't require jumping 
 between multiple top-level folders.
 
-
+```
 frontend/src/
 │
 ├── features/
@@ -48,6 +48,7 @@ frontend/src/
 │   └── AppRoutes.tsx          # React Router route definitions
 │
 └── App.tsx
+```
 
 ## Routing
 

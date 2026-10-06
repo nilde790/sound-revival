@@ -21,6 +21,13 @@ before and alongside implementation. Read in this order:
 10. [10-Testing.md](10-Testing.md) — testing strategy for backend and 
     frontend
 
+## Current state
+
+[STATUS.md](STATUS.md) — compact snapshot of what is built, what is in 
+progress and known technical debt. Updated at the end of every work 
+session. Working conventions for contributors (and for Claude Code) are 
+in [`/CLAUDE.md`](../CLAUDE.md).
+
 ## Architecture Decision Records
 
 See [adr/](adr/) for the reasoning behind major technical decisions 

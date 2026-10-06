@@ -43,11 +43,11 @@
 - As a **visitor**, I want to see the seller's contact information on a 
   listing, so that I can reach out directly to negotiate a purchase
 
-  ## Roles & moderation
+## Roles & moderation
 
 - As an **admin**, I want to view all listings regardless of owner, so 
   that I can monitor the platform's content
-- As an **admin**, I want to delete any listing (not just my own), so 
-  that I can remove inappropriate or spam content
+- As an **admin**, I want to edit or delete any listing (not just my 
+  own), so that I can remove inappropriate or spam content
 - As a **registered user**, I want my role to default to "user" upon 
   registration, so that only a designated admin has elevated permissions

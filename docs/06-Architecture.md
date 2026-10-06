@@ -9,7 +9,7 @@ are documented separately as ADRs (see `docs/adr/`).
 
 ## Backend
 
-- **Language/Framework**: C# with ASP.NET Core Web API
+- **Language/Framework**: C# with ASP.NET Core Web API (.NET 10)
 - **API style**: Controller-based REST API, following 
   the classic MVC-style controller pattern — chosen for its wide adoption 
   in professional/enterprise environments and clearer separation of 
@@ -18,28 +18,46 @@ are documented separately as ADRs (see `docs/adr/`).
   tables and to handle migrations (**Code First** approach — schema is 
   generated from C# entity classes via EF Core Migrations, rather than 
   generating classes from an existing database)
-- **Solution structure**: multi-project .NET Solution, with clear 
-  physical separation between layers (not just folders within a single 
-  project):
-  - **`NomeProgetto.WebApi`** — Controllers, request/response handling, 
-    authentication middleware; no business logic
-  - **`NomeProgetto.Repository`** — data access layer:
-    - `Interfaces/` — contracts (e.g. `IListingRepository`) defining 
-      what each repository/service must be able to do
-    - `Services/` — implementations of those interfaces, containing 
-      business logic (e.g. "a user can only edit their own listing", 
-      "max 5 images per listing") and EF Core data access
-  - **`NomeProgetto.Dto`** — Data Transfer Objects, shaping data 
+- **Solution structure**: multi-project .NET Solution 
+  (`backend/SoundRevival.slnx`), with clear physical separation between 
+  layers (not just folders within a single project):
+  - **`SoundRevival.WebApi`** — Controllers, request/response handling, 
+    DI registration and authentication middleware (`Program.cs`); no 
+    business logic
+  - **`SoundRevival.Repository`** — domain, business logic and data access:
+    - `Entities/` — EF Core entity classes (`User`, `Listing`, `Image`)
+    - `AppDbContext.cs` + `Migrations/` — EF Core mapping and schema history
+    - `Interfaces/` — contracts for both repositories and services 
+      (e.g. `IUserRepository`, `IAuthService`)
+    - `Repository/` — repository implementations: pure EF Core data 
+      access, no business rules (e.g. `UserRepository`)
+    - `Services/` — service implementations containing business logic 
+      (e.g. "a user can only edit their own listing", "max 5 images per 
+      listing"); they depend on repository **interfaces**, never on 
+      `AppDbContext` directly
+  - **`SoundRevival.Dto`** — Data Transfer Objects, shaping data 
     sent to/from the API, decoupled from internal database entities
-  - **`NomeProgetto.Tests`** — unit tests, targeting the Repository 
-    layer's interfaces (enabled by depending on interfaces rather than 
-    concrete implementations — supports mocking in tests)
-- **Dependency direction**: WebApi depends on Repository (via 
-  interfaces) and Dto; Repository depends on Dto; this separation 
-  enforces that controllers never access the database directly
+  - **`SoundRevival.Tests`** — unit tests on services, with repository 
+    interfaces mocked (Moq)
+- **Dependency direction**: WebApi → Repository (via interfaces) + Dto; 
+  Repository → Dto; Dto depends on nothing. Controllers never access the 
+  database directly, and entities never leave the Repository project 
+  (controllers only see DTOs)
+
+```
+Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ──> PostgreSQL
+ (WebApi)        (Services/)      (Repository/)
+```
   
-- **Authentication**: token-based (JWT) — the backend issues a token on 
-  login, the frontend attaches it to subsequent requests to prove identity
+- **Authentication**: token-based (JWT, HMAC-SHA256) — the backend 
+  issues a token on login/register, the frontend attaches it to 
+  subsequent requests (`Authorization: Bearer <token>`). Passwords are 
+  hashed with BCrypt. Token claims: `sub` (user id), `email`, and 
+  `ClaimTypes.Role`. Since `MapInboundClaims` is left at its default, 
+  `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`
+- **Error handling**: services throw exceptions for expected failures; 
+  controllers catch them and map them to HTTP status codes with the 
+  standard `{ "error": "..." }` body (see 07-API-Design.md)
 
 ## Frontend
 
@@ -86,8 +104,8 @@ are documented separately as ADRs (see `docs/adr/`).
 - **Frontend**: deployed separately as a static build (e.g. Vercel, 
   Netlify)
 - **Containerization**: Docker Compose (`docker-compose.yml` at the 
-  repository root) used to run backend, frontend, and database together 
-  in local development, ensuring consistency between environments
+  repository root). Currently runs only PostgreSQL; backend and frontend 
+  services will be added so the whole stack can run together locally
 
 ## CI/CD (high-level)
 

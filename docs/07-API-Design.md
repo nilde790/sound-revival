@@ -21,14 +21,19 @@
 ```json
 { "email": "user@example.com", "password": "...", "displayName": "..." }
 ```
+Errors: `400` if the email is already registered.
 
 **POST /api/auth/login** — body:
 ```json
 { "email": "user@example.com", "password": "..." }
 ```
-Response:
+Errors: `401` on unknown email or wrong password (same message for both, 
+so the API doesn't reveal which emails are registered).
+
+Both endpoints return `200` with the same body (`AuthResponseDto`), so a 
+user is logged in immediately after registering:
 ```json
-{ "token": "eyJ...", "user": { "id": "...", "displayName": "...", "role": "user" } }
+{ "token": "eyJ...", "userId": "...", "displayName": "...", "role": "user" }
 ```
 
 ## Users
@@ -91,9 +96,14 @@ during implementation.
 ## Authorization summary
 
 - **Public** (no auth): browsing/searching listings, viewing a single listing
-- **Logged-in user**: create listings, edit/delete own profile
-- **Owner only**: edit/delete own listings and their images
-- **Admin**: can delete any listing (see 03-UserStories.md → Roles & moderation)
+- **Logged-in user**: create listings, view/edit own profile
+- **Owner only**: edit/delete own listings and manage their images
+- **Admin**: can edit/delete any listing (see 03-UserStories.md → Roles & moderation)
+
+Ownership is checked in the **service layer** by comparing the listing's 
+`UserId` with the authenticated user's id (read from the JWT), so that 
+guessing a listing ID is not enough (NFR-2). A non-owner gets `403`; a 
+missing listing gets `404`.
 
 ## Error responses (standard shape)
 
