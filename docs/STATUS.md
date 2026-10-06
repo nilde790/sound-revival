@@ -40,7 +40,7 @@ categories).
 | Frontend state | React Query (server state) + Context (auth) + `useState` (local UI) |
 | Image storage | Cloudinary — only the URL is persisted in `images` (**not started**) |
 | Containerization | Docker Compose (Postgres now; backend/frontend to be added) |
-| Testing | xUnit + Moq (backend unit — **AuthService done**), EF Core + real Postgres container (backend integration — **not started**), Vitest + RTL (frontend — not started) |
+| Testing | xUnit + Moq (backend unit — **AuthService done**), EF Core + real Postgres container (backend integration — **not started, planned for Listings**), Vitest + RTL (frontend — not started) |
 | CI/CD | GitHub Actions, `.github/workflows/` — **folder exists, empty** |
 
 Key ADRs (see `docs/adr/`): separate C# backend + React frontend
@@ -58,15 +58,20 @@ Entities/ (User, Listing, Image)
 SoundRevival.Dto → request/response DTOs, decoupled from entities
 SoundRevival.Tests → xUnit + Moq, targets Repository layer via interfaces
 
-
 Dependency direction: `WebApi → Repository (via interfaces) + Dto` ·
 `Repository → Dto`. Controllers never touch the DB directly.
 
 **JWT middleware** (`Program.cs`): `AddAuthentication` + `AddJwtBearer`
 configured and validated; `app.UseAuthentication()` before
 `app.UseAuthorization()`, before `MapControllers()`. Verified end-to-end
-via a temporary `[Authorize]` test endpoint (now removed): 401 without
-token, 200 with valid token and correct claims read back.
+(now via unit tests + prior manual Postman verification — the temporary
+`[Authorize]` diagnostic endpoint has been removed).
+
+**Reading the authenticated user's id in a controller**: claims are read
+via `User.FindFirst(...)` (`ClaimTypes`/`JwtRegisteredClaimNames`
+depending on whether `MapInboundClaims` is left at its default or set to
+`false` — check `Program.cs`/`AuthService.cs` for the convention actually
+in use before writing Listings' owner-only authorization logic).
 
 ## 4. Domain model (compact)
 
@@ -91,11 +96,11 @@ in the service layer, not a DB constraint.
 | POST | `/api/auth/register` | No | ✅ implemented + unit tested |
 | POST | `/api/auth/login` | No | ✅ implemented + unit tested |
 | GET/PUT | `/api/users/me` | Yes | ⬜ not started |
-| GET | `/api/listings` (paginated, filterable) | No | ⬜ not started |
-| GET | `/api/listings/{id}` | No | ⬜ not started |
-| POST | `/api/listings` | Yes | ⬜ not started |
-| PUT/DELETE | `/api/listings/{id}` | Owner/admin | ⬜ not started |
-| POST/DELETE | `/api/listings/{id}/images...` | Owner | ⬜ not started |
+| GET | `/api/listings` (paginated, filterable) | No | ⬜ **next up** |
+| GET | `/api/listings/{id}` | No | ⬜ **next up** |
+| POST | `/api/listings` | Yes | ⬜ **next up** |
+| PUT/DELETE | `/api/listings/{id}` | Owner/admin | ⬜ **next up** |
+| POST/DELETE | `/api/listings/{id}/images...` | Owner | ⬜ next up (after core CRUD) |
 
 Base path `/api`, plural kebab-case resources, verbs express action,
 pagination via `page`/`pageSize` (defaults 1/20), errors as
@@ -112,7 +117,7 @@ interceptor in `shared/lib/axios.ts`. Routing: `/`, `/listings/:id`,
 
 ## 7. CURRENT STATE — what's actually built
 
-**`feature/auth` branch: complete, tested, and cleaned up.**
+**`feature/auth`: fully complete, tested, cleaned up, and merged into `main`.**
 
 - Entities (`User`, `Listing`, `Image`), `AppDbContext`, initial EF Core
   migration applied to Postgres
@@ -121,50 +126,54 @@ interceptor in `shared/lib/axios.ts`. Routing: `/`, `/listings/:id`,
 - Repository pattern in place: `IUserRepository` / `UserRepository`
   (Moq-testable), registered in `Program.cs` via `AddScoped`
 - JWT middleware (`AddAuthentication`/`AddJwtBearer`,
-  `UseAuthentication`/`UseAuthorization`) added to `Program.cs` and
-  verified end-to-end
+  `UseAuthentication`/`UseAuthorization`) in `Program.cs`, verified
+  end-to-end
 - 5 unit tests (xUnit + Moq) on `AuthService`, all passing:
   `LoginAsync` (valid credentials / user not found / wrong password),
   `RegisterAsync` (email already exists / successful registration)
-- Debug-only code (`IncludeErrorDetails`, auth event logging) and the
-  temporary `/api/auth/me` diagnostic endpoint have been removed
-- Register + login manually re-verified via Postman; DB rows verified
-  via DBeaver
-
-**PR status**: a PR (`feature/auth → main`) was opened and the earlier
-mergeability/CI block was checked and resolved — **confirm the merge
-itself has actually been completed on GitHub before starting Listings**,
-since the chat history doesn't show an explicit "merged" confirmation.
+- NU1903 fixed: direct `PackageReference` pin on `Microsoft.OpenApi`
+  2.7.5 in `SoundRevival.WebApi.csproj` (was a transitive vuln via
+  `Microsoft.AspNetCore.OpenApi` on .NET 10 — GHSA-v5pm-xwqc-g5wc)
+- All debug-only code and the temporary `/api/auth/me` diagnostic
+  endpoint removed
+- **PR `feature/auth → main` merged — confirmed on GitHub.**
 
 **Not started**: Listings CRUD, Image upload/Cloudinary, any
 frontend code, CI pipeline content, deployment, backend integration
-tests (EF Core + real Postgres container — infra not yet set up).
+tests (infra not yet set up — deliberately deferred to Listings, see §9).
 
 ## 8. Known open items / technical debt
 
 - Integration test infrastructure (e.g. Testcontainers + real Postgres)
-  not yet set up — needed for the "integration" half of the testing
-  strategy in `10-Testing.md`; can be introduced now (quick win on Auth)
-  or deferred to Listings (more to actually test)
-- NU1903 security warning on `Microsoft.OpenApi` v2.0.0 — deferred to a
-  dedicated commit, not yet done
+  not yet set up — deliberately deferred to Listings (more realistic
+  queries/authorization to exercise than Auth alone offered)
 - Possible `dotnet-ef` global tool ↔ project EF Core version mismatch
-  warnings (cosmetic so far)
-- Confirm the `feature/auth → main` merge is actually completed on
-  GitHub
+  warnings (cosmetic so far, not actively blocking anything)
 
-## 9. Roadmap — next in sequence
+## 9. Roadmap — next in sequence (this is the chat to start)
 
-1. Confirm `feature/auth → main` merge is complete
-2. NU1903 fix (dedicated commit)
-3. Decide: set up integration test infra now, or defer to Listings
-4. Listings CRUD: `IListingRepository`/service, DTOs, controller
-   (`POST/GET/PUT/DELETE /api/listings`), JWT owner-only authorization
-5. Image upload via Cloudinary
-6. React frontend (Vite + TS) — auth flow, homepage, listing detail,
+1. **Listings CRUD** — this is the next feature, start a fresh
+   `feature/listings` branch:
+   - `IListingRepository` / `ListingRepository` (mirror the
+     `IUserRepository` pattern already established)
+   - `ListingService` / `IListingService` (business logic: ownership
+     checks, max-5-images rule enforcement lives here, not in the DB)
+   - DTOs (`CreateListingRequestDto`, `ListingResponseDto`, etc. — see
+     `docs/07-API-Design.md`)
+   - `ListingsController`: `POST/GET/PUT/DELETE /api/listings`,
+     `GET /api/listings/{id}`, pagination on the list endpoint
+   - JWT owner-only authorization on PUT/DELETE — reuse the claim-reading
+     convention already established in Auth (see §3)
+   - **Decide early**: set up integration test infra (Testcontainers +
+     real Postgres) now, alongside the first Listings endpoints, since
+     this is the deferral point agreed on in the Auth phase
+   - Unit tests (xUnit + Moq) for `ListingService`, same AAA pattern as
+     `AuthServiceTests`
+2. Image upload via Cloudinary
+3. React frontend (Vite + TS) — auth flow, homepage, listing detail,
    create/edit form, profile page
-7. Populate GitHub Actions CI (`.github/workflows/`)
-8. Deployment (backend+DB, frontend) — platform TBD
+4. Populate GitHub Actions CI (`.github/workflows/`)
+5. Deployment (backend+DB, frontend) — platform TBD
 
 v2 (explicitly deferred): in-app messaging, simulated payments, admin
 moderation dashboard, dynamic categories. Explicitly out of scope
@@ -192,6 +201,7 @@ forever: real payments, real shipping, multi-language.
   and the global `dotnet-ef` tool
 
 ---
-*Last updated: reflects state as of 2026‑10‑04. Regenerate/update this
-file whenever the project state changes meaningfully — outdated status
-here is worse than no status at all.*
+*Last updated: reflects state as of 2026‑10‑04 — feature/auth merged,
+Listings CRUD is next. Regenerate/update this file whenever the project
+state changes meaningfully — outdated status here is worse than no
+status at all.*
