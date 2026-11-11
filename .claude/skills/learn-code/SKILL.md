@@ -94,7 +94,7 @@ A review is not "does it compile and run". Every piece of code the user writes i
 * Also look for edge cases: null, empty, zero, negative, very large values, duplicates, concurrent requests.
 * Prefer a hint or a question over the corrected code ("What happens if two users register the same e-mail at the same instant?").
 * If an issue is not covered by any rule, say so and propose adding a rule to the standards document, so the gap is closed for the future.
-* Mention open technical debt (`docs/dev/STATUS.md` §7) in the code being touched.
+* Mention open technical debt (`docs/dev/STATUS.md` §4) in the code being touched.
 
 Do not stay silent about a problem to keep the session smooth. A missed issue is a missed lesson.
 

@@ -97,20 +97,13 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
   hashed with BCrypt. Token claims: `sub` (user id), `email`, and 
   `ClaimTypes.Role`. Since `MapInboundClaims` is left at its default, 
   `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`
-- **Error handling** ([ADR-009](adr/ADR-009-Error-Handling.md)): services 
-  throw a small set of custom exceptions for expected failures; one 
-  global `IExceptionHandler` maps them to status codes and returns RFC 
-  9457 `ProblemDetails`. Controllers contain no `try/catch`
-- **Validation** ([ADR-010](adr/ADR-010-Input-Validation.md)): 
-  DataAnnotations on request DTOs, checked automatically by 
-  `[ApiController]` (`400` + `ValidationProblemDetails`); business rules 
-  stay in services
-- **Cross-cutting rules** (validation, error handling, concurrency, 
-  async/cancellation, logging, security, configuration, testing) are 
-  defined in [dev/ENGINEERING-STANDARDS.md](dev/ENGINEERING-STANDARDS.md). 
-  Dedicated documents for security, observability, DevOps, AI 
-  integration and performance are written at the start of the roadmap 
-  phase that needs them (see 09-Roadmap.md)
+- **Error handling**: custom exceptions → global `IExceptionHandler` → 
+  `ProblemDetails` ([ADR-009](adr/ADR-009-Error-Handling.md))
+- **Validation**: DataAnnotations on request DTOs, business rules in 
+  services ([ADR-010](adr/ADR-010-Input-Validation.md))
+- **Cross-cutting rules**: [dev/ENGINEERING-STANDARDS.md](dev/ENGINEERING-STANDARDS.md); 
+  dedicated docs (security, observability, DevOps, AI, performance) are 
+  written at the start of their roadmap phase
 
 ## Frontend
 

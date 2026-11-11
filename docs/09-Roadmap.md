@@ -17,7 +17,7 @@ uncommitted files, open debt) lives in [dev/STATUS.md](dev/STATUS.md).
   learning path is extended at the start of each phase.
 - **Docs just-in-time**: technical documents and ADRs listed under 
   *Write at phase start* are written when the phase begins, not before.
-- **Debt ids** (C1, A3, T1…) refer to [dev/STATUS.md](dev/STATUS.md) §7.
+- **Debt ids** (C1, A3, T1…) refer to [dev/STATUS.md](dev/STATUS.md) §4.
 - **Market value** of the main skills, from the November 2026 audit: 
   🟢 consolidated (asked almost everywhere) · 🔵 emerging (growing 
   demand) · 🟣 niche or context-specific.

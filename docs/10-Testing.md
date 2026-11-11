@@ -47,12 +47,8 @@ Covered:
 - Validation logic that lives in services (allowed values, state 
   transitions)
 
-Conventions (see TEST-1..TEST-5 in the standards):
-- One scenario per test, named `Method_Scenario_ExpectedResult`, 
-  Arrange-Act-Assert
-- Shared setup in the test class constructor or small builder helpers, 
-  not copy-pasted
-- Folders mirror what is tested (`Services/`), not the tool
+Conventions (naming, assertions, setup, folders): rules TEST-1..7 in 
+the standards.
 
 Not covered by unit tests (see integration tests):
 - Whether an EF Core LINQ query produces the right SQL and results
