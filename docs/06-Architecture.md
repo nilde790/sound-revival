@@ -7,6 +7,48 @@ main components, how they communicate, and the reasoning behind key
 technology choices. Detailed trade-off discussions for major decisions 
 are documented separately as ADRs (see `docs/adr/`).
 
+## System context
+
+Who uses the system and which external systems it depends on (C4 
+model, level 1). Dashed elements are planned, not built yet.
+
+```mermaid
+flowchart LR
+    visitor(["Visitor<br/>(anonymous)"])
+    user(["Registered user<br/>(seller / buyer)"])
+    admin(["Admin"])
+    sr["SoundRevival<br/>used-instrument marketplace"]
+    cloudinary["Cloudinary<br/>image storage"]
+
+    visitor -- "browses, searches" --> sr
+    user -- "publishes, manages listings" --> sr
+    admin -- "moderates listings" --> sr
+    sr -. "stores images (planned)" .-> cloudinary
+```
+
+## Containers
+
+The deployable parts and how they talk to each other (C4 model, 
+level 2).
+
+```mermaid
+flowchart LR
+    browser(["Browser"])
+    spa["Frontend SPA<br/>React + Vite + TypeScript<br/>(planned)"]
+    api["Backend API<br/>ASP.NET Core .NET 10<br/>REST + JWT"]
+    db[("PostgreSQL 16<br/>Users, Listings, Images")]
+    cloudinary["Cloudinary<br/>(planned)"]
+
+    browser --> spa
+    spa -. "JSON over HTTPS<br/>Authorization: Bearer" .-> api
+    browser -- "today: .http file / Postman" --> api
+    api -- "EF Core + Npgsql" --> db
+    api -. "image upload (planned)" .-> cloudinary
+
+    classDef planned stroke-dasharray: 5 5
+    class spa,cloudinary planned
+```
+
 ## Backend
 
 - **Language/Framework**: C# with ASP.NET Core Web API (.NET 10)
@@ -55,9 +97,20 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
   hashed with BCrypt. Token claims: `sub` (user id), `email`, and 
   `ClaimTypes.Role`. Since `MapInboundClaims` is left at its default, 
   `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`
-- **Error handling**: services throw exceptions for expected failures; 
-  controllers catch them and map them to HTTP status codes with the 
-  standard `{ "error": "..." }` body (see 07-API-Design.md)
+- **Error handling** ([ADR-009](adr/ADR-009-Error-Handling.md)): services 
+  throw a small set of custom exceptions for expected failures; one 
+  global `IExceptionHandler` maps them to status codes and returns RFC 
+  9457 `ProblemDetails`. Controllers contain no `try/catch`
+- **Validation** ([ADR-010](adr/ADR-010-Input-Validation.md)): 
+  DataAnnotations on request DTOs, checked automatically by 
+  `[ApiController]` (`400` + `ValidationProblemDetails`); business rules 
+  stay in services
+- **Cross-cutting rules** (validation, error handling, concurrency, 
+  async/cancellation, logging, security, configuration, testing) are 
+  defined in [dev/ENGINEERING-STANDARDS.md](dev/ENGINEERING-STANDARDS.md). 
+  Dedicated documents for security, observability, DevOps, AI 
+  integration and performance are written at the start of the roadmap 
+  phase that needs them (see 09-Roadmap.md)
 
 ## Frontend
 
@@ -98,11 +151,13 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
 
 ## Deployment (high-level)
 
-- **Backend + Database**: deployed to a platform with free-tier support 
-  for ASP.NET Core and PostgreSQL (e.g. Render, Railway) — specific 
-  choice and steps to be detailed when deployment is implemented
+- **Backend + Database**: platform not chosen yet. It will be an ADR 
+  when deployment starts, comparing a PaaS that runs a Docker image 
+  (e.g. Render) with a cloud provider (Azure Container Apps, AWS) on 
+  cost, free-tier limits and professional value. Free tiers change 
+  often (see 05-Database.md → Engine)
 - **Frontend**: deployed separately as a static build (e.g. Vercel, 
-  Netlify)
+  Netlify, or the same cloud provider's static hosting)
 - **Containerization**: Docker Compose (`docker-compose.yml` at the 
   repository root). Currently runs only PostgreSQL; backend and frontend 
   services will be added so the whole stack can run together locally
@@ -110,10 +165,10 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
 ## CI/CD (high-level)
 
 - GitHub Actions workflows (`.github/workflows/`) run automatically on 
-  every push/pull request to `main`:
-  - Lint and build the backend
-  - Lint and build the frontend
-  - Run automated tests (see `10-Testing.md`)
+  every push/pull request to `main` (NFR-9):
+  - Backend: build with zero warnings, `dotnet format --verify-no-changes`
+  - Frontend: ESLint, type check (`tsc --noEmit`), build
+  - Automated tests (see `10-Testing.md`)
 - Merging to `main` is only allowed once the pipeline passes, enforcing 
   a baseline of code quality
 

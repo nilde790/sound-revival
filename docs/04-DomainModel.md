@@ -30,6 +30,8 @@ Represents an instrument listing published by a user.
 - price
 - category (fixed enum — see Glossary)
 - condition (fixed enum — see Glossary)
+- brand (optional, free text — e.g. "Fender", "Yamaha"; not a fixed 
+  list, since instrument brands number in the thousands)
 - status (`available` | `sold`) — default: `available`
 - createdAt
 - updatedAt
@@ -96,6 +98,13 @@ User (1) ──────< (many) Listing (1) ──────< (many) Image
   relationship in a relational database.
 
 - **A single `email` field is used** both for login and as the contact 
-  reference shown to buyers, keeping the model simpler. If needed in the 
-  future, a separate public contact field could be introduced without 
-  breaking this structure.
+  reference shown to buyers, keeping the model simpler. It is shown only 
+  to authenticated visitors (FR-15), and it is compared 
+  case-insensitively (stored normalized). If needed in the future, a 
+  separate public contact field could be introduced without breaking 
+  this structure.
+
+- **Brand is a free-text attribute, not an entity.** A fixed list would 
+  be impossible to maintain; a `Brand` table would only pay off with 
+  brand pages or normalized spelling ("Fender" vs "fender"), which are 
+  not in scope.

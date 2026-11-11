@@ -51,15 +51,21 @@ developer. Specific goals include:
 
 **Included:**
 - User registration and authentication
-- Creating, editing, and deleting listings
-- Searching and filtering listings by category, name, price
+- Creating, editing, and deleting listings, and marking them as sold
+- Searching and filtering listings by keyword, category, brand, 
+  condition and price, sorted by newest or by price
 - Homepage displaying listings from all users
-- Simple contact between users (e.g. seller's email, no in-app chat)
+- Simple contact between users: the seller's e-mail is shown to 
+  logged-in visitors only (no in-app chat in v1)
 
-**Excluded (see 09-Roadmap.md):**
-- Real payments (possibly simulated/mocked in v1)
-- Shipping management
+**Planned for v2 (committed, after v1 — see 09-Roadmap.md):**
 - Real-time in-app messaging between users
+- Simulated payments (test mode, no real money)
+- Admin moderation dashboard, dynamic categories, token refresh
+
+**Excluded:**
+- Real payments
+- Shipping management
 
 ## Why this domain
 

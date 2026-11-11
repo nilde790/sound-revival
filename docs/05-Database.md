@@ -2,9 +2,15 @@
 
 ## Engine
 
-**PostgreSQL 16** — chosen for its strong ecosystem support, wide adoption 
-in the industry, and free-tier compatibility with common deployment 
-platforms (Render, Railway, Supabase). Runs locally via `docker-compose.yml`.
+**PostgreSQL 16** — chosen for its strong ecosystem support and wide 
+adoption in the industry (the most used database in the Stack Overflow 
+Developer Survey 2025 and 2026). Runs locally via `docker-compose.yml`.
+
+Hosting for the deployed database is not chosen yet: it will be an ADR 
+when deployment starts. Free tiers change often (as of late 2026, 
+Render's free PostgreSQL expires after 30 days and Railway only offers 
+monthly credits; Neon and Supabase offer non-expiring free tiers with 
+storage limits), so check current terms at that time.
 
 ## Image storage strategy
 
@@ -78,26 +84,36 @@ deleted too. This keeps the database consistent without orphaned rows.
 - `Listings.UserId`, `Images.ListingId` — created automatically by EF 
   Core for foreign keys
 
-## Planned schema hardening (not yet migrated)
+## Planned schema changes (not yet migrated)
 
 The original design specified tighter column constraints than the 
-current migration enforces. They are still the target, to be added via 
-fluent API (`HasMaxLength`, `HasPrecision`) in a dedicated migration:
+current migration enforces, and the domain gained a `Brand` attribute. 
+Both are the target, to be added via fluent API (`HasMaxLength`, 
+`HasPrecision`) and entity changes, ideally in one dedicated migration 
+(technical debt S1):
 
-| Column                 | Target          |
-|------------------------|-----------------|
-| `Users.Email`          | varchar(255)    |
-| `Users.DisplayName`    | varchar(100)    |
-| `Users.Role`           | varchar(20)     |
-| `Listings.Title`       | varchar(150)    |
-| `Listings.Price`       | numeric(10,2)   |
-| `Listings.Category`    | varchar(30)     |
-| `Listings.Condition`   | varchar(20)     |
-| `Listings.Status`      | varchar(20)     |
-| `Images.Url`           | varchar(500)    |
+| Column                 | Target                          |
+|------------------------|---------------------------------|
+| `Users.Email`          | varchar(255), stored normalized (lowercase) so the unique index is case-insensitive in practice |
+| `Users.DisplayName`    | varchar(100)                    |
+| `Users.Role`           | varchar(20)                     |
+| `Listings.Title`       | varchar(150)                    |
+| `Listings.Description` | varchar(5000)                   |
+| `Listings.Price`       | numeric(10,2)                   |
+| `Listings.Category`    | varchar(30)                     |
+| `Listings.Condition`   | varchar(20)                     |
+| `Listings.Status`      | varchar(20)                     |
+| `Listings.Brand`       | **new column**, varchar(60), NULL allowed |
+| `Images.Url`           | varchar(500)                    |
 
 Until then, length and precision limits must be enforced by DTO 
-validation.
+validation (see the field constraints in 07-API-Design.md).
+
+Indexes to reconsider with the sort options of 07-API-Design.md: 
+`Listings.CreatedAt` (default sort, newest first). No index is planned 
+for `Brand` or text search: partial matches (`ILIKE '%x%'`) can't use a 
+B-tree index, and at the target volume (NFR-4: 1,000 listings) a scan is 
+fast enough. Measure first (rule DATA-6).
 
 ## Design notes
 

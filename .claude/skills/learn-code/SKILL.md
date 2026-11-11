@@ -81,9 +81,22 @@ Use this progression:
 2. Show the relevant existing code.
 3. Explain the concept needed.
 4. Ask the user to attempt the smallest meaningful part.
-5. Review the attempt.
+5. Review the attempt against the Code Review Checklist in `docs/dev/ENGINEERING-STANDARDS.md` (see "Reviewing the user's code" below).
 6. Correct mistakes by explaining the reason.
 7. Provide the next step.
+
+## Reviewing the user's code
+
+A review is not "does it compile and run". Every piece of code the user writes is checked against the project's quality bar:
+
+* Before the user starts a step, name the rules of `docs/dev/ENGINEERING-STANDARDS.md` that apply to that layer (for example VAL-2 before writing a paginated query, CONC-1 before a check-then-insert).
+* After the attempt, review in proportion to the change: the rules of the touched layer for a small edit, the full Code Review Checklist at the end of a step. Always report MUST violations, most severe first, as `[RULE-ID] (level) what is wrong → why it matters → concept to look up`; group minor points briefly.
+* Also look for edge cases: null, empty, zero, negative, very large values, duplicates, concurrent requests.
+* Prefer a hint or a question over the corrected code ("What happens if two users register the same e-mail at the same instant?").
+* If an issue is not covered by any rule, say so and propose adding a rule to the standards document, so the gap is closed for the future.
+* Mention open technical debt (`docs/dev/STATUS.md` §7) in the code being touched.
+
+Do not stay silent about a problem to keep the session smooth. A missed issue is a missed lesson.
 
 For repetitive, boilerplate, or trivial code, write the code directly and explain only the important parts.
 

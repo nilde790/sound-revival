@@ -40,6 +40,7 @@ frontend/src/
 │   ├── HomePage.tsx           # features together (thin, mostly layout)
 │   ├── ListingDetailPage.tsx
 │   ├── CreateListingPage.tsx
+│   ├── EditListingPage.tsx
 │   ├── LoginPage.tsx
 │   ├── RegisterPage.tsx
 │   └── ProfilePage.tsx
@@ -57,6 +58,7 @@ frontend/src/
 | `/`                    | HomePage               | No             |
 | `/listings/:id`        | ListingDetailPage      | No             |
 | `/listings/new`        | CreateListingPage      | Yes            |
+| `/listings/:id/edit`   | EditListingPage        | Yes (owner or admin) |
 | `/login`               | LoginPage              | No             |
 | `/register`            | RegisterPage           | No             |
 | `/profile`             | ProfilePage            | Yes            |
@@ -91,6 +93,12 @@ if the user isn't logged in.
 - **ListingCard**: compact preview shown in listing grids (homepage, 
   search results)
 - **ListingForm**: shared between create and edit listing flows
+- **ListingDetail**: shows the seller's email only when the API returns 
+  it (authenticated requests, FR-15); otherwise shows an invitation to 
+  log in to contact the seller
+- **ListingFilters**: keyword, category, condition, brand, price range 
+  and sort (`newest` / `price_asc` / `price_desc`), kept in the URL query 
+  string so a filtered search can be shared and survives a page reload
 - **Pagination**: generic component driving `page`/`pageSize` params 
   against `GET /api/listings`
 - **ProtectedRoute**: wraps pages requiring authentication
