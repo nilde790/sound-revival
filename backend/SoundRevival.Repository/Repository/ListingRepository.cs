@@ -68,11 +68,8 @@ namespace SoundRevival.Repository.Repository
             query = query.Where(l => l.Status == filter.Status);
 
             var page = new PagedResult<Listing>();
-
             page.TotalCount = await query.CountAsync();
-
-            query = query.OrderBy(l => l.Title).ThenBy(l => l.Id);
-
+            query = query.OrderByDescending(l => l.CreatedAt).ThenBy(l => l.Id);
             page.Items = await query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize).ToListAsync();         
              
             return page;
