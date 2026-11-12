@@ -55,7 +55,8 @@ New requirements get the next free id.
 - **FR-21**: Listing results must be sortable by newest first (default), 
   price ascending and price descending
 - **FR-22**: Listing results must be paginated (`page`, `pageSize`; 
-  defaults 1 and 20, maximum page size 100). Out-of-range values are 
+  defaults 1 and 20, `page` 1–10,000 to avoid integer overflow in the 
+  offset, maximum page size 100). Out-of-range values are 
   rejected with `400`, not silently corrected
 
 ### Categories

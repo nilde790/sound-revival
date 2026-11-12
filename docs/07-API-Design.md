@@ -16,7 +16,7 @@ Implementation state per endpoint is tracked in
 - Requests and responses are JSON (except image upload)
 - Timestamps are ISO 8601 in UTC (e.g. `2026-11-11T10:15:00Z`); ids are 
   UUIDs
-- Paginated endpoints accept `page` (≥ 1, default 1) and `pageSize` 
+- Paginated endpoints accept `page` (1–10,000, default 1) and `pageSize` 
   (1–100, default 20). Values out of range return `400`; they are not 
   silently corrected
 
@@ -104,10 +104,10 @@ business-rule checks (allowed lists, ownership) stay in the services.
 
 ## Authentication
 
-| Method | Endpoint             | Auth | Success | Description |
-|--------|----------------------|------|---------|-------------|
-| POST   | /api/auth/register   | No   | 200     | Create a new user account (rate limited) |
-| POST   | /api/auth/login      | No   | 200     | Authenticate, returns JWT (rate limited) |
+| Method | Endpoint           | Auth | Success | Description                              |
+| ------ | ------------------ | ---- | ------- | ---------------------------------------- |
+| POST   | /api/auth/register | No   | 200     | Create a new user account (rate limited) |
+| POST   | /api/auth/login    | No   | 200     | Authenticate, returns JWT (rate limited) |
 
 **POST /api/auth/register** — body:
 ```json
@@ -134,9 +134,9 @@ Logout has no endpoint: the client discards the token (FR-3).
 
 ## Users
 
-| Method | Endpoint      | Auth | Success | Description |
-|--------|---------------|------|---------|-------------|
-| GET    | /api/users/me | Yes  | 200     | Get current user's profile |
+| Method | Endpoint      | Auth | Success | Description                                  |
+| ------ | ------------- | ---- | ------- | -------------------------------------------- |
+| GET    | /api/users/me | Yes  | 200     | Get current user's profile                   |
 | PUT    | /api/users/me | Yes  | 200     | Update current user's profile (display name) |
 
 Bodies are defined when the endpoints are designed (FR-4).
