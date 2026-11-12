@@ -21,8 +21,8 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 | Endpoint | State |
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, unit tested (old error pattern, debt E1) |
-| `GET /api/listings`, `GET /api/listings/{id}` | 🚧 repository done |
-| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | 🚧 repository done |
+| `GET /api/listings`, `GET /api/listings/{id}` | 🚧 repository + DTOs done; service and controller missing |
+| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | 🚧 repository + DTOs done; service and controller missing |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
 | `GET /health` | ⬜ phase 2 |
@@ -36,14 +36,26 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
 `Microsoft.EntityFrameworkCore.Relational` 10.0.9 for MSB3277).
 
 **On `feature/CRUDlistings`**:
-- ✅ Committed: `IListingRepository` / `ListingRepository` (get by id 
-  tracked, filtered + paginated list, add, remove, save); 
-  `PagedResult<T>`, `PaginationRequestDto`, `ListingFilterRequestDto`; 
-  documentation review (standards, ADR-004..010, roadmap, learning path).
-- 🚧 Uncommitted drafts: `CreateListingRequestDto`, `UpdateListingRequestDto`, 
-  `UpdateListingStatusRequestDto`, `ListingResponseDto`. Still missing per 
-  the contract in 07-API-Design.md: `brand`, `images`, `seller`, 
-  DataAnnotations.
+- ✅ **Step 1 — repository** (`6a7905f`): `IListingRepository` / 
+  `ListingRepository` (get by id tracked, filtered + paginated list 
+  ordered newest first with id tiebreaker, add, remove, save); 
+  `PagedResult<T>`.
+- ✅ **Step 2 — DTOs and validation** (`8576ddd`), all in 
+  `SoundRevival.Dto`, validated with DataAnnotations (ADR-010):
+  - requests: `CreateListingRequestDto`, `UpdateListingRequestDto` (same 
+    rules as create, duplicated on purpose), `UpdateListingStatusRequestDto`, 
+    `PaginationRequestDto` (`page` 1–10,000, `pageSize` 1–100), 
+    `ListingFilterRequestDto` (+ `IValidatableObject` for 
+    `minPrice ≤ maxPrice`);
+  - responses: `ListingSummaryResponseDto` (list item), 
+    `ListingDetailResponseDto` with nested `SellerResponseDto` (email 
+    omitted when null) and `ListingImageResponseDto`; 
+    `PagedResponseDto<T>` (computed `TotalPages`);
+  - custom attribute `Validation/MaxDecimalPlacesAttribute`.
+- ✅ Documentation review (standards, ADR-004..010, roadmap, learning 
+  path) committed in `b909472`.
+- `Brand` is deliberately absent from the DTOs: the column arrives with 
+  the phase 3 migration (S1).
 
 ## 4. Technical debt
 
@@ -57,15 +69,16 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| C1 🔴 | `pageSize` unbounded; `page ≤ 0` makes `Skip` negative → 500 | `PaginationRequestDto`, `ListingRepository` | VAL-2 |
+| C1 🔴 | Bounds now declared on `PaginationRequestDto`, but they only take effect once the controller binds it (`[ApiController]`); close after the controller step and its test | `PaginationRequestDto`, `ListingRepository` | VAL-2 |
 | C2 🔴 | Email compared case-sensitively: duplicate accounts possible, login fails on case mismatch | `UserRepository.FindUserByEmail` | VAL-3 |
 | C3 🔴 | Check-then-insert registration: concurrent requests → unhandled unique violation (500) | `AuthService.RegisterAsync` | CONC-1, ERR-3 |
-| C4 🔴 | No input validation on request DTOs (DataAnnotations, ADR-010) | all request DTOs | VAL-1 |
+| C4 🔴 | Listing DTOs annotated; **auth DTOs** (`RegisterRequestDto`, `LoginRequestDto`) still unvalidated | auth request DTOs | VAL-1 |
 | E1 🟠 | Auth uses built-in exceptions + controller `try/catch` + `{ "error" }`; migrate to ADR-009 | `AuthService`, `AuthController` | ERR-2, ERR-6 |
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C6 🟠 | Search term not escaped in `ILIKE` (`%`, `_` act as wildcards) | `ListingRepository` | VAL-6 |
 | C7 🟠 | JWT settings read with `config["…"]!` / `int.Parse`: late, unclear crash if missing | `Program.cs`, `AuthService` | CFG-1 |
-| C11 🟠 | Default order is by title; contract says newest first, `sort` options, id tiebreaker | `ListingRepository` | DATA-2 |
+| C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |
+| C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
 | C8 🟡 | Unknown-email login skips `BCrypt.Verify`: timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
 | C9 🟡 | No CORS policy | `Program.cs` | SEC-8 |
@@ -100,23 +113,34 @@ being touched. Remove a row when fixed.
 | B2 🟡 | No Central Package Management; versions drift (`JwtBearer` 10.0.10 vs 10.0.9) | STYLE-2 |
 | B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-| B5 🟡 | Repeated magic strings (`"available"`, `"user"`) | STYLE-4 |
+| B5 🟡 | Repeated magic strings (`"available"` in the entity and in `ListingFilterRequestDto`, `"user"`) | STYLE-4 |
 
 ## 5. Next steps (phase 1, in order)
 
 Study first: [LEARNING-PATH.md](LEARNING-PATH.md) → Phase 1 (1.2, 1.3 
 before the error handling step).
 
-1. Finish listing DTOs: contract fields + DataAnnotations (C4)
-2. Error handling infrastructure (ADR-009), then migrate auth (E1)
-3. `ListingService`: ownership/admin, allowed values, status rules
-4. `ListingsController` (CRUD + `PATCH /status`)
-5. Fix touched debt: C1, C2, C3, C6, C7, C11, A3
-6. Unit tests for `ListingService`; fix `AuthServiceTests` (T1–T3)
+1. ~~Listing DTOs + DataAnnotations~~ ✅ done
+2. **Next:** decision D1 (how the service signals 404 / 403: custom 
+   exceptions + global `IExceptionHandler`, ADR-009), then the error 
+   handling infrastructure; migrate auth later (E1)
+3. `ListingService` (`IListingService` + `AddScoped`): read the listing 
+   rules in ENGINEERING-STANDARDS first. Ownership/admin checks, allowed 
+   category/condition/status values, trim (VAL-3), mapping entity → 
+   DTOs, seller email only when authenticated, status rules, `sort` (C11)
+4. `ListingsController` (CRUD + `PATCH /status`, `201` with `Location`)
+5. Fix touched debt: C1, C2, C3, C6, C7, A3
+6. Unit tests for `ListingService`, `MaxDecimalPlacesAttribute` and the 
+   DTO annotations (`Validator.TryValidateObject`); fix 
+   `AuthServiceTests` (T1–T3)
+
+Working mode: `/learn-code` — the developer writes the code, Claude 
+explains, gives hints on other examples and reviews each file against the 
+standards.
 
 Then phase 2 (CI, integration tests, Docker, backend deploy) — see the 
 roadmap.
 
 ---
-*Last updated: 2026-11-11 — documentation review complete; docs slimmed 
-(single source per topic).*
+*Last updated: 2026-11-12 — listing repository and DTOs with validation 
+done; next: service (decision D1).*
