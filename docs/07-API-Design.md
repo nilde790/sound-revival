@@ -240,6 +240,12 @@ state (e.g. `reserved`) is likely. Allowed values and transitions are
 validated in the service. Response `204`. Errors: `400`, `401`, `403`, 
 `404`.
 
+Transitions (decided 2026-11-13): `available` → `sold` and `sold` → 
+`available` are both allowed (a seller can relist, e.g. when a buyer 
+backs out). Setting the current status again is accepted as a no-op 
+(`204`, `updatedAt` refreshed). Any other value → `400`. To revisit 
+when v2 adds `reserved` and automatic sales.
+
 ## Images
 
 | Method | Endpoint                            | Auth  | Success | Description |

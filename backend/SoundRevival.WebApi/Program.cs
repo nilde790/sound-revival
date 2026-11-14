@@ -1,11 +1,14 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Repository;
+using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Repository;
 using SoundRevival.Repository.Services;
+using SoundRevival.WebApi.ExceptionHandling;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,11 +17,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add services to the container.
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IUserRepository,UserRepository>();   
 builder.Services.AddScoped<IListingRepository, ListingRepository>() ;
 
 builder.Services.AddControllers();
+
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -48,7 +56,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
 

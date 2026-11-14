@@ -35,6 +35,16 @@ namespace SoundRevival.Repository.Repository
             
         }
 
+        public async Task<Listing?> GetListingDetailByIdAsync(Guid id)
+        {
+            var listing = await _context.Listings.AsNoTracking()
+                .Include(l => l.User)
+                .Include(l => l.Images)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            return listing;
+
+        }
         public async Task<PagedResult<Listing>> GetListingsAsync(ListingFilterRequestDto filter, PaginationRequestDto pagination)
         {
             IQueryable<Listing> query = _context.Listings.AsNoTracking();

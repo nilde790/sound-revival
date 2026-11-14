@@ -14,6 +14,8 @@ namespace SoundRevival.Repository.Interfaces
 
         public Task<Listing?> GetListingByIdAsync(Guid id);
 
+        public Task<Listing?>GetListingDetailByIdAsync(Guid id);
+
         public void AddListing(Listing newListing);
 
         public void DeleteListing(Listing listing);
