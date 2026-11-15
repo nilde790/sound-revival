@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Repository;
 using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Repository;
 using SoundRevival.Repository.Services;
+using SoundRevival.Repository.Settings;
 using SoundRevival.WebApi.ExceptionHandling;
 using System.Text;
 
@@ -31,9 +33,22 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration
+    .GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer();
+
+// Configured through the validated JwtSettings, resolved lazily by the container:
+// reading builder.Configuration here would run before ValidateOnStart and could see missing values.
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtSettings>>((options, jwtOptions) =>
     {
+        var jwt = jwtOptions.Value;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -41,13 +56,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
 
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key))
         };
-      
-    }
-    );
+    });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

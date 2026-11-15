@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 using Npgsql;
 using SoundRevival.Dto.Auth;
@@ -8,6 +8,7 @@ using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Services;
+using SoundRevival.Repository.Settings;
 
 namespace SoundRevival.Tests.Mock
 {
@@ -20,13 +21,15 @@ namespace SoundRevival.Tests.Mock
 
         public AuthServiceTests()
         {
-            var configuration = new Mock<IConfiguration>();
-            configuration.Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            configuration.Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            configuration.Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            configuration.Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
+            var jwtSettings = Options.Create(new JwtSettings
+            {
+                Key = "questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345",
+                Issuer = "SoundRevival",
+                Audience = "SoundRevivalUsers",
+                ExpiryMinutes = 60
+            });
 
-            _authService = new AuthService(_userRepo.Object, configuration.Object);
+            _authService = new AuthService(_userRepo.Object, jwtSettings);
         }
 
         private static User CreateUser(string email, string password) => new()

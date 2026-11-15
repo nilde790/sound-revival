@@ -6,7 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using SoundRevival.Dto.Auth;
@@ -14,18 +14,19 @@ using SoundRevival.Dto.Constants;
 using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
+using SoundRevival.Repository.Settings;
 
 namespace SoundRevival.Repository.Services
 {
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _repository;
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
-        public AuthService(IUserRepository repo, IConfiguration configuration)
+        public AuthService(IUserRepository repo, IOptions<JwtSettings> jwtoptions)
         {
             _repository = repo;
-            _configuration = configuration;
+            _jwtSettings = jwtoptions.Value;
             
         }
 
@@ -90,10 +91,10 @@ namespace SoundRevival.Repository.Services
 
         private AuthResponseDto GenerateAuthResponse(User user)
         {
-            var jwtKey = _configuration["Jwt:Key"]!;
-            var jwtIssuer = _configuration["Jwt:Issuer"];
-            var jwtAudience = _configuration["Jwt:Audience"];
-            var expiryMinutes = int.Parse(_configuration["Jwt:ExpiryMinutes"]!);
+            var jwtKey = _jwtSettings.Key;
+            var jwtIssuer = _jwtSettings.Issuer;
+            var jwtAudience = _jwtSettings.Audience;
+            var expiryMinutes = _jwtSettings.ExpiryMinutes;
 
             var claims = new List<Claim>
             {
