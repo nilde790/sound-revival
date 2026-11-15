@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SoundRevival.Dto.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -23,7 +24,7 @@ namespace SoundRevival.Dto.Listings
         public string? Search { get; set; }
 
         [StringLength(50)]
-        public string Status { get; set; } = "available";
+        public string Status { get; set; } = ListingValues.Available;
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

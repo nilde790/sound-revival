@@ -155,7 +155,6 @@ being touched. Remove a row when fixed.
 | B2 🟡 | No Central Package Management; versions drift (`JwtBearer` 10.0.10 vs 10.0.9) | STYLE-2 |
 | B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-| B5 🟡 | `ListingValues` now holds the allowed sets, but `"available"` is still a literal in the entity and in `ListingFilterRequestDto` (add `const` values and use them), `"user"` in auth, and `"admin"` repeated 3× in `ListingsController` (a typo would silently 403 a real admin) | STYLE-4 |
 
 ## 5. Next steps (phase 1, in order)
 
@@ -165,11 +164,11 @@ before the error handling step).
 1. ~~Listing DTOs + DataAnnotations~~ ✅ done
 2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done
 3. ~~`ListingService`~~ ✅ done; `sort` (C11) still open
-4. ~~`ListingsController`~~ ✅ done (uncommitted), C1 closed
-5. **Next:** commit step 4; `Roles.Admin` constant (B5); then migrate 
-   auth to ADR-009 (E1)
-6. Fix touched debt: C2, C3, C6, C7, A3
-7. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
+4. ~~`ListingsController`~~ ✅ done and committed, C1 closed
+5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done (uncommitted)
+6. **Next:** commit B5; migrate auth to ADR-009 (E1)
+7. Fix touched debt: C2, C3, C6, C7, A3
+8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
    called), `MaxDecimalPlacesAttribute` and the DTO annotations 
    (`Validator.TryValidateObject`); fix `AuthServiceTests` (T1–T3)
@@ -182,6 +181,6 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-15 — `ListingsController` done and checked 
-manually (C1 closed, VAL-8 added), not committed yet; next: commit, 
-`Roles.Admin` constant, auth migration (E1).*
+*Last updated: 2026-11-15 — `ListingsController` committed; B5 closed 
+(`Roles.Admin`/`Roles.User`, `ListingValues.Available`/`Sold`), not 
+committed yet; next: commit, auth migration (E1).*

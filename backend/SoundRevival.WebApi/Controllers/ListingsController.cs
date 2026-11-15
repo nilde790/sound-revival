@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoundRevival.Dto.Common;
+using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.WebApi.Extensions;
@@ -49,7 +50,7 @@ namespace SoundRevival.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> Update(Guid id, UpdateListingRequestDto request)
         {
-            var isAdmin = User.IsInRole("admin");
+            var isAdmin = User.IsInRole(Roles.Admin);
             var result = await _listingService.UpdateAsync(id, User.GetUserId(), request, isAdmin);
             return Ok(result);
         }
@@ -58,7 +59,7 @@ namespace SoundRevival.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var isAdmin = User.IsInRole("admin");
+            var isAdmin = User.IsInRole(Roles.Admin);
             await _listingService.DeleteAsync(id, User.GetUserId(), isAdmin);
             return NoContent();
 
@@ -68,7 +69,7 @@ namespace SoundRevival.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> ChangeStatus(Guid id, UpdateListingStatusRequestDto request)
         {
-            var isAdmin = User.IsInRole("admin");
+            var isAdmin = User.IsInRole(Roles.Admin);
             await _listingService.ChangeStateAsync(id, User.GetUserId(), request, isAdmin);
             return NoContent();
 

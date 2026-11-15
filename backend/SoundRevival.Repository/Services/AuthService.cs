@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Dto.Auth;
+using SoundRevival.Dto.Constants;
 using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Interfaces;
 
@@ -40,7 +41,7 @@ namespace SoundRevival.Repository.Services
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 DisplayName = request.DisplayName,
-                Role = "user",
+                Role = Roles.User,
                 CreatedAt = DateTime.UtcNow
 
             };
