@@ -58,7 +58,7 @@ cross-field rules; data-dependent rules in the service
   (required, length, range, format).
 - **VAL-2 (MUST) Bound everything a client can make large**: `page ≥ 1`, 
   `1 ≤ pageSize ≤ 100`, max collection sizes, max text lengths. *Why*: 
-  unbounded input is the cheapest denial of service (debt C1).
+  unbounded input is the cheapest denial of service.
 - **VAL-3 (MUST) Normalize before comparing or storing**: trim strings; 
   emails compared case-insensitively (debt C2).
 - **VAL-4 (MUST)** Enum-like values checked against the allow-lists in 
@@ -70,6 +70,12 @@ cross-field rules; data-dependent rules in the service
 - **VAL-7 (MUST) No security-relevant fields in request bodies**: owner 
   id from the token; no `role`, `userId`, `id`, `createdAt`, nor `status` 
   outside its endpoint. *Why*: mass assignment (OWASP API Top 10).
+- **VAL-8 (MUST) Parse and format numbers and dates in code with the 
+  invariant culture**, attributes included: 
+  `[Range(typeof(decimal), "0.01", "1000000", ParseLimitsInInvariantCulture = true)]`. 
+  The current culture is only for showing values to users. *Why*: on an 
+  Italian machine `"0.01"` fails to parse (comma separator) and every 
+  request on that DTO returns 500, while CI in English passes.
 
 ## 3. Error handling
 
@@ -231,7 +237,8 @@ layer. Report as `[RULE-ID] (level) what → why → concept`.
   per use case (ARCH-4) · interface + `AddScoped` (ARCH-7)
 - **Input**: constrained and bounded (VAL-1, VAL-2) · normalized 
   (VAL-3) · allow-lists incl. filters (VAL-4) · `decimal` money (VAL-5) · 
-  escaped LIKE (VAL-6) · no owner/role/status from body (VAL-7)
+  escaped LIKE (VAL-6) · no owner/role/status from body (VAL-7) · 
+  invariant-culture parsing (VAL-8)
 - **Errors & concurrency**: specific custom exceptions, mapped, nothing 
   swallowed (ERR-1, ERR-2) · DB errors translated, DB constraint as guard 
   (ERR-3, CONC-1) · safe bodies (ERR-4) · return values checked (ERR-5) · 

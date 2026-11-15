@@ -21,8 +21,8 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 | Endpoint | State |
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, unit tested (old error pattern, debt E1) |
-| `GET /api/listings`, `GET /api/listings/{id}` | 🚧 repository + DTOs + service done (uncommitted); controller and tests missing |
-| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | 🚧 repository + DTOs + service done (uncommitted); controller and tests missing |
+| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented and checked manually (uncommitted); unit tests missing |
+| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented and checked manually (uncommitted); unit tests missing |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
 | `GET /health` | ⬜ phase 2 |
@@ -55,7 +55,7 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
 - ✅ Documentation review (standards, ADR-004..010, roadmap, learning 
   path) committed in `b909472`.
 - ✅ **Step 3a — error handling infrastructure** (ADR-009, 
-  **uncommitted**): abstract `AppException` (message + `StatusCode`) 
+  `027a09f`): abstract `AppException` (message + `StatusCode`) 
   with `NotFoundException` 404, `ForbiddenException` 403, 
   `BusinessRuleException` 400, `InvalidCredentialsException` 401 
   (`SoundRevival.Repository/Exceptions`); `GlobalExceptionHandler` 
@@ -65,8 +65,7 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
   `AddExceptionHandler` + `AddProblemDetails` + `UseExceptionHandler` 
   (before authentication). Verified end to end with a temporary endpoint 
   (404, 403, opaque 500), then removed.
-- ✅ **Step 3 — `ListingService`** (**uncommitted**, not registered in 
-  DI yet): `IListingService` with the current user passed as parameters 
+- ✅ **Step 3 — `ListingService`** (`027a09f`): `IListingService` with the current user passed as parameters 
   (`Guid userId`, `bool isAdmin`; `Guid? userId` for the detail, email 
   shown only when authenticated). All six methods: list (paged summary), 
   detail, create, update, delete, change status. Private helpers 
@@ -82,6 +81,21 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     `Conditions`, `Statuses` (`IReadOnlySet<string>`, exact match).
   - Status transitions decided and documented in 07-API-Design.md 
     (`sold` ↔ `available` both allowed, same status is a no-op).
+- ✅ **Step 4 — `ListingsController`** (**uncommitted**): 
+  `IListingService` registered with `AddScoped`; all six endpoints, thin 
+  (no `try/catch`), explicit `[Authorize]`/`[AllowAnonymous]`, `201` + 
+  `Location` via `CreatedAtAction`, `204` for delete/status. Current user 
+  via `WebApi/Extensions/ClaimsPrincipalExtensions`: `GetUserIdOrNull()` 
+  (anonymous allowed) and `GetUserId()` (`[Authorize]` only, throws 
+  `InvalidOperationException` → 500 if the claim is missing); admin via 
+  `User.IsInRole("admin")`. Checked manually with Postman: 200, 201, 204, 
+  400, 401, 403 (other user's listing), 404.
+  - Fixes found while testing: pagination parameter renamed `pagination` 
+    (a parameter named `page` switched model binding to prefix mode and 
+    ignored `page`/`pageSize`); `[Range(typeof(decimal), …)]` now uses 
+    `ParseLimitsInInvariantCulture` (on an Italian machine `"0.01"` threw 
+    → 500 on every create). New rule VAL-8.
+  - 9 listing read requests added to `SoundRevival.WebApi.http`.
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
 
@@ -97,7 +111,6 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| C1 🔴 | Bounds now declared on `PaginationRequestDto`, but they only take effect once the controller binds it (`[ApiController]`); close after the controller step and its test | `PaginationRequestDto`, `ListingRepository` | VAL-2 |
 | C2 🔴 | Email compared case-sensitively: duplicate accounts possible, login fails on case mismatch | `UserRepository.FindUserByEmail` | VAL-3 |
 | C3 🔴 | Check-then-insert registration: concurrent requests → unhandled unique violation (500) | `AuthService.RegisterAsync` | CONC-1, ERR-3 |
 | C4 🔴 | Listing DTOs annotated; **auth DTOs** (`RegisterRequestDto`, `LoginRequestDto`) still unvalidated | auth request DTOs | VAL-1 |
@@ -142,7 +155,7 @@ being touched. Remove a row when fixed.
 | B2 🟡 | No Central Package Management; versions drift (`JwtBearer` 10.0.10 vs 10.0.9) | STYLE-2 |
 | B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-| B5 🟡 | `ListingValues` now holds the allowed sets, but `"available"` is still a literal in the entity and in `ListingFilterRequestDto` (add `const` values and use them), and `"user"` in auth | STYLE-4 |
+| B5 🟡 | `ListingValues` now holds the allowed sets, but `"available"` is still a literal in the entity and in `ListingFilterRequestDto` (add `const` values and use them), `"user"` in auth, and `"admin"` repeated 3× in `ListingsController` (a typo would silently 403 a real admin) | STYLE-4 |
 
 ## 5. Next steps (phase 1, in order)
 
@@ -150,13 +163,11 @@ Study first: [LEARNING-PATH.md](LEARNING-PATH.md) → Phase 1 (1.2, 1.3
 before the error handling step).
 
 1. ~~Listing DTOs + DataAnnotations~~ ✅ done
-2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done (uncommitted)
-3. ~~`ListingService`~~ ✅ done (uncommitted); `sort` (C11) still open
-4. **Next:** commit steps 2–3; register `IListingService` with 
-   `AddScoped`; `ListingsController` (CRUD + `PATCH /status`, `201` with 
-   `Location`, user id from `ClaimTypes.NameIdentifier`, admin from the 
-   role claim, explicit `[Authorize]`/`[AllowAnonymous]`) → closes C1
-5. Migrate auth to ADR-009 (E1), together with the controller work
+2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done
+3. ~~`ListingService`~~ ✅ done; `sort` (C11) still open
+4. ~~`ListingsController`~~ ✅ done (uncommitted), C1 closed
+5. **Next:** commit step 4; `Roles.Admin` constant (B5); then migrate 
+   auth to ADR-009 (E1)
 6. Fix touched debt: C2, C3, C6, C7, A3
 7. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
@@ -171,6 +182,6 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-13 — error handling infrastructure (ADR-009) and 
-`ListingService` done, not committed yet; next: commit, then 
-`ListingsController`.*
+*Last updated: 2026-11-15 — `ListingsController` done and checked 
+manually (C1 closed, VAL-8 added), not committed yet; next: commit, 
+`Roles.Admin` constant, auth migration (E1).*
