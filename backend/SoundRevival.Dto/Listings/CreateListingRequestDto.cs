@@ -16,7 +16,7 @@ namespace SoundRevival.Dto.Listings
         [StringLength(5000, MinimumLength = 1)]
         public string Description { get; set; } = string.Empty;
 
-        [Range(typeof(decimal),"0.01", "1000000")]
+        [Range(typeof(decimal),"0.01", "1000000",ParseLimitsInInvariantCulture = true)]
         [MaxDecimalPlaces(2)]
         public decimal Price { get; set; }
 

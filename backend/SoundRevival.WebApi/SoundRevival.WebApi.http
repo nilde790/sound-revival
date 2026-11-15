@@ -21,3 +21,33 @@ Content-Type: application/json
 
 ###
 @token = paste-jwt-here
+
+### --- Listings: reads (anonymous) ---
+
+### List, default pagination (expect 200)
+GET {{host}}/api/listings
+
+### List with filters (expect 200)
+GET {{host}}/api/listings?page=1&pageSize=5&category=guitar&minPrice=100&maxPrice=2000
+
+### Page out of range (expect 400, closes C1)
+GET {{host}}/api/listings?page=0
+
+### Page size too large (expect 400, closes C1)
+GET {{host}}/api/listings?pageSize=500
+
+### minPrice greater than maxPrice (expect 400, IValidatableObject)
+GET {{host}}/api/listings?minPrice=500&maxPrice=100
+
+### Detail of a listing that does not exist (expect 404 ProblemDetails)
+GET {{host}}/api/listings/00000000-0000-0000-0000-000000000001
+
+### Id that is not a Guid (expect 404 from the route constraint)
+GET {{host}}/api/listings/abc
+
+### Detail as anonymous: seller email must be absent (paste a real id)
+GET {{host}}/api/listings/paste-listing-id-here
+
+### Detail as authenticated user: seller email must be present
+GET {{host}}/api/listings/paste-listing-id-here
+Authorization: Bearer {{token}}

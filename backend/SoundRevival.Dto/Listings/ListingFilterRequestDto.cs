@@ -13,10 +13,10 @@ namespace SoundRevival.Dto.Listings
         [StringLength(150)]
         public string? Condition { get; set; }
 
-        [Range(typeof(decimal), "0", "1000000")]
+        [Range(typeof(decimal), "0", "1000000", ParseLimitsInInvariantCulture = true)]
         public decimal? MinPrice { get; set; }
 
-        [Range(typeof(decimal), "0", "1000000")]
+        [Range(typeof(decimal), "0", "1000000", ParseLimitsInInvariantCulture = true)]
         public decimal? MaxPrice { get; set; }
 
         [StringLength(100)]

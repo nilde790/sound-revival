@@ -22,7 +22,8 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IUserRepository,UserRepository>();   
-builder.Services.AddScoped<IListingRepository, ListingRepository>() ;
+builder.Services.AddScoped<IListingRepository, ListingRepository>();
+builder.Services.AddScoped<IListingService, ListingService>();
 
 builder.Services.AddControllers();
 
