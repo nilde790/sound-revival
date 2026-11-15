@@ -2,6 +2,7 @@
 using Moq;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Repository.Entities;
+using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Services;
 using System;
@@ -97,7 +98,7 @@ namespace SoundRevival.Tests.Mock
             };
 
 
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => authService.LoginAsync(loginRequest));
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() => authService.LoginAsync(loginRequest));
         }
 
         [Fact]
@@ -141,7 +142,7 @@ namespace SoundRevival.Tests.Mock
             };
 
 
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => authService.LoginAsync(loginRequest));
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() => authService.LoginAsync(loginRequest));
         }
 
         [Fact]
@@ -183,7 +184,7 @@ namespace SoundRevival.Tests.Mock
                 Password ="test"
             };
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => authService.RegisterAsync(registerRequest));
+            await Assert.ThrowsAsync<BusinessRuleException>(() => authService.RegisterAsync(registerRequest));
         }
 
 

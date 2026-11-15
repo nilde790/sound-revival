@@ -114,7 +114,6 @@ being touched. Remove a row when fixed.
 | C2 🔴 | Email compared case-sensitively: duplicate accounts possible, login fails on case mismatch | `UserRepository.FindUserByEmail` | VAL-3 |
 | C3 🔴 | Check-then-insert registration: concurrent requests → unhandled unique violation (500) | `AuthService.RegisterAsync` | CONC-1, ERR-3 |
 | C4 🔴 | Listing DTOs annotated; **auth DTOs** (`RegisterRequestDto`, `LoginRequestDto`) still unvalidated | auth request DTOs | VAL-1 |
-| E1 🟠 | Auth still uses built-in exceptions + controller `try/catch` + `{ "error" }`. The ADR-009 infrastructure now exists: throw `BusinessRuleException` (email taken) / `InvalidCredentialsException` (login), remove the `try/catch`, check the `SaveChangesAsync` result. Same `InvalidOperationException` today means 400 in auth and 500 in listings | `AuthService`, `AuthController` | ERR-2, ERR-5, ERR-6 |
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C6 🟠 | Search term not escaped in `ILIKE` (`%`, `_` act as wildcards) | `ListingRepository` | VAL-6 |
 | C7 🟠 | JWT settings read with `config["…"]!` / `int.Parse`: late, unclear crash if missing | `Program.cs`, `AuthService` | CFG-1 |
@@ -166,7 +165,8 @@ before the error handling step).
 3. ~~`ListingService`~~ ✅ done; `sort` (C11) still open
 4. ~~`ListingsController`~~ ✅ done and committed, C1 closed
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done (uncommitted)
-6. **Next:** commit B5; migrate auth to ADR-009 (E1)
+6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done (uncommitted; not yet 
+   checked manually with Postman)
 7. Fix touched debt: C2, C3, C6, C7, A3
 8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 

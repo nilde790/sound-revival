@@ -74,11 +74,6 @@ The client reads `status` and `detail` (or `errors` for validation).
 Unexpected errors return `500` with a generic `detail`; the real cause 
 is only logged.
 
-> **Implementation state**: the auth endpoints still return the old 
-> `{ "error": "..." }` shape until they are migrated (technical debt E1 
-> in [dev/STATUS.md](dev/STATUS.md)). New endpoints use `ProblemDetails` 
-> from the start.
-
 Error messages never contain stack traces, SQL or internal details 
 (rule ERR-4).
 

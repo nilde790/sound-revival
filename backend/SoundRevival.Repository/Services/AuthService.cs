@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Repository.Entities;
+using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 
 namespace SoundRevival.Repository.Services
@@ -32,7 +33,7 @@ namespace SoundRevival.Repository.Services
 
             if(existingUser != null)
             {
-                throw new InvalidOperationException("Email already registered");
+                throw new BusinessRuleException("Email already registered");
             }
 
             var user = new User
@@ -47,7 +48,12 @@ namespace SoundRevival.Repository.Services
             };
 
             _repository.AddUser(user);
-            await _repository.SaveChangesAsync();
+            var saved = await _repository.SaveChangesAsync();
+
+            if (!saved)
+            {
+                throw new InvalidOperationException("Failed to save the new user.");
+            }
 
             return GenerateAuthResponse(user);
           
@@ -58,7 +64,7 @@ namespace SoundRevival.Repository.Services
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
-                throw new UnauthorizedAccessException("Invalid email or password.");
+                throw new InvalidCredentialsException("Invalid email or password.");
 
             }
 
