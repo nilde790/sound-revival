@@ -111,8 +111,6 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| C2 🔴 | Email compared case-sensitively: duplicate accounts possible, login fails on case mismatch | `UserRepository.FindUserByEmail` | VAL-3 |
-| C3 🔴 | Check-then-insert registration: concurrent requests → unhandled unique violation (500) | `AuthService.RegisterAsync` | CONC-1, ERR-3 |
 | C4 🔴 | Listing DTOs annotated; **auth DTOs** (`RegisterRequestDto`, `LoginRequestDto`) still unvalidated | auth request DTOs | VAL-1 |
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C6 🟠 | Search term not escaped in `ILIKE` (`%`, `_` act as wildcards) | `ListingRepository` | VAL-6 |
@@ -141,9 +139,7 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| T1 🔴 | Registration test only asserts `NotNull`: role `user` and password hashing unverified | `AuthServiceTests` | TEST-1 |
-| T2 🟠 | `IConfiguration` mock setup copy-pasted in 5 tests | `AuthServiceTests` | TEST-4 |
-| T3 🟡 | Names don't state behaviour (`ReturnException`); folder `Mock/` | `SoundRevival.Tests` | TEST-3, TEST-7 |
+| T3 🟡 | Folder `Mock/` is misleading (test names are fixed in `AuthServiceTests`) | `SoundRevival.Tests` | TEST-7 |
 | T4 🟡 | No integration tests yet (phase 2) | `SoundRevival.Tests` | TEST-6 |
 
 **Build & tooling** (phase 2)
@@ -167,7 +163,9 @@ before the error handling step).
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done (uncommitted)
 6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done (uncommitted; not yet 
    checked manually with Postman)
-7. Fix touched debt: C2, C3, C6, C7, A3
+7. Fix touched debt: ~~C2, C3~~ ✅ done (uncommitted; email normalized 
+   with `Trim().ToLowerInvariant()`, unique violation `23505` → 
+   `BusinessRuleException`, 5 new tests, T1 closed); C6, C7, A3 open
 8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
    called), `MaxDecimalPlacesAttribute` and the DTO annotations 

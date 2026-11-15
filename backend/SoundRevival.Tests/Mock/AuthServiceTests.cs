@@ -1,240 +1,146 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Moq;
+using Npgsql;
 using SoundRevival.Dto.Auth;
+using SoundRevival.Dto.Constants;
 using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 
 namespace SoundRevival.Tests.Mock
 {
     public class AuthServiceTests
     {
- 
-        [Fact]
-        public async Task LoginAsync_ValidCredentials_ReturnAuthResponse()
+        // xUnit creates a new instance of this class for every test,
+        // so these fields are fresh (and the mock has no leftover setups) each time.
+        private readonly Mock<IUserRepository> _userRepo = new();
+        private readonly AuthService _authService;
+
+        public AuthServiceTests()
         {
+            var configuration = new Mock<IConfiguration>();
+            configuration.Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
+            configuration.Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
+            configuration.Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
+            configuration.Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
 
-            var mockUserRepo = new Mock<IUserRepository>();
-            var mockConfiguration = new Mock<IConfiguration>();
+            _authService = new AuthService(_userRepo.Object, configuration.Object);
+        }
 
-             
+        private static User CreateUser(string email, string password) => new()
+        {
+            Id = Guid.NewGuid(),
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
+        };
 
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@gmail.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("prova")
-            };
+        // ---------- LoginAsync ----------
 
-            mockUserRepo 
-                .Setup(u => u.FindUserByEmail("test@gmail.com"))
-                .ReturnsAsync(user);
-          
+        [Fact]
+        public async Task LoginAsync_ValidCredentials_ReturnsTokenAndUserId()
+        {
+            var user = CreateUser("test@gmail.com", "prova");
+            _userRepo.Setup(r => r.FindUserByEmail("test@gmail.com")).ReturnsAsync(user);
 
-            mockConfiguration
-                .Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            mockConfiguration
-                .Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            mockConfiguration
-                .Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            mockConfiguration
-                .Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
+            var result = await _authService.LoginAsync(new LoginRequestDto { Email = "test@gmail.com", Password = "prova" });
 
-
-
-
-            var authService = new AuthService(mockUserRepo.Object, mockConfiguration.Object);
-
-            var loginRequest = new LoginRequestDto
-            {
-                Email = "test@gmail.com",
-                Password = "prova"
-            };
-
-            var result = await authService.LoginAsync(loginRequest);
-
-            Assert.NotNull(result);
             Assert.Equal(user.Id, result.UserId);
             Assert.False(string.IsNullOrEmpty(result.Token));
-      
-
-           
         }
 
         [Fact]
-
-        public async Task LoginAsync_UserDoesNotExist_ReturnException()
+        public async Task LoginAsync_UnknownEmail_ThrowsInvalidCredentials()
         {
-            var mockUserRepo = new Mock<IUserRepository>();
-            var mockConfiguration = new Mock<IConfiguration>();
+            _userRepo.Setup(r => r.FindUserByEmail("unknown@gmail.com")).ReturnsAsync((User?)null);
 
-
-            mockConfiguration
-                .Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            mockConfiguration
-                .Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            mockConfiguration
-                .Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            mockConfiguration
-                .Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
-
-
-
-            mockUserRepo
-              .Setup(u => u.FindUserByEmail("notexistent@gmail.com"))
-              .ReturnsAsync((User?)null);
-
-            var authService = new AuthService(mockUserRepo.Object, mockConfiguration.Object);
-
-            var loginRequest = new LoginRequestDto
-            {
-                Email = "notexistent@gmail.com",
-                Password = "any"
-            };
-
-
-            await Assert.ThrowsAsync<InvalidCredentialsException>(() => authService.LoginAsync(loginRequest));
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() =>
+                _authService.LoginAsync(new LoginRequestDto { Email = "unknown@gmail.com", Password = "any" }));
         }
 
         [Fact]
-
-        public async Task LoginAsync_InvalidCredentials_ReturnException()
+        public async Task LoginAsync_WrongPassword_ThrowsInvalidCredentials()
         {
-            var mockUserRepo = new Mock<IUserRepository>();
-            var mockConfiguration = new Mock<IConfiguration>();
+            _userRepo.Setup(r => r.FindUserByEmail("test@gmail.com")).ReturnsAsync(CreateUser("test@gmail.com", "correct"));
 
-
-            mockConfiguration
-                .Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            mockConfiguration
-                .Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            mockConfiguration
-                .Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            mockConfiguration
-                .Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
-
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "invalidpassword@gmail.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("correct")
-
-
-            };
-
-            mockUserRepo
-              .Setup(u => u.FindUserByEmail("invalidpassword@gmail.com"))
-              .ReturnsAsync(user);
-
-            var authService = new AuthService(mockUserRepo.Object, mockConfiguration.Object);
-
-         
-
-            var loginRequest = new LoginRequestDto
-            {
-                Email = "invalidpassword@gmail.com",
-                Password = "wrong"
-            };
-
-
-            await Assert.ThrowsAsync<InvalidCredentialsException>(() => authService.LoginAsync(loginRequest));
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() =>
+                _authService.LoginAsync(new LoginRequestDto { Email = "test@gmail.com", Password = "wrong" }));
         }
 
         [Fact]
-
-        public async Task RegisterAsync_UserAlreadyExist_ReturnException()
+        public async Task LoginAsync_EmailWithDifferentCaseAndSpaces_FindsUserByNormalizedEmail()
         {
-            var mockUserRepo = new Mock<IUserRepository>();
-            var mockConfiguration = new Mock<IConfiguration>();
+            var user = CreateUser("test@gmail.com", "prova");
+            _userRepo.Setup(r => r.FindUserByEmail("test@gmail.com")).ReturnsAsync(user);
 
+            var result = await _authService.LoginAsync(new LoginRequestDto { Email = " Test@Gmail.COM ", Password = "prova" });
 
-            mockConfiguration
-                .Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            mockConfiguration
-                .Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            mockConfiguration
-                .Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            mockConfiguration
-                .Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
-
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "alreadyexisting@gmail.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("test")
-
-
-            };
-
-            mockUserRepo
-              .Setup(u => u.FindUserByEmail("alreadyexisting@gmail.com"))
-              .ReturnsAsync(user);
-
-            var authService = new AuthService(mockUserRepo.Object, mockConfiguration.Object);
-
-
-            var registerRequest = new RegisterRequestDto()
-            {
-                Email = "alreadyexisting@gmail.com",
-                Password ="test"
-            };
-
-            await Assert.ThrowsAsync<BusinessRuleException>(() => authService.RegisterAsync(registerRequest));
+            Assert.Equal(user.Id, result.UserId);
         }
 
+        // ---------- RegisterAsync ----------
 
         [Fact]
-
-        public async Task RegisterAsync_UserCreated_Returnresponse()
+        public async Task RegisterAsync_EmailAlreadyRegistered_ThrowsBusinessRule()
         {
-            var mockUserRepo = new Mock<IUserRepository>();
-            var mockConfiguration = new Mock<IConfiguration>();
+            _userRepo.Setup(r => r.FindUserByEmail("existing@gmail.com")).ReturnsAsync(CreateUser("existing@gmail.com", "test"));
 
-
-            mockConfiguration
-                .Setup(c => c["Jwt:Key"]).Returns("questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345");
-            mockConfiguration
-                .Setup(c => c["Jwt:Issuer"]).Returns("SoundRevival");
-            mockConfiguration
-                .Setup(c => c["Jwt:Audience"]).Returns("SoundRevivalUsers");
-            mockConfiguration
-                .Setup(c => c["Jwt:ExpiryMinutes"]).Returns("60");
-
-    
-
-            mockUserRepo
-              .Setup(u => u.FindUserByEmail("newuser@gmail.com"))
-              .ReturnsAsync((User?)null);
-
-            mockUserRepo.Setup(r => r.AddUser(It.IsAny<User>()));
-
-            mockUserRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(true);
-
-
-
-            var authService = new AuthService(mockUserRepo.Object, mockConfiguration.Object);
-
-
-            var registerRequest = new RegisterRequestDto()
-            {
-                Email = "newuser@gmail.com",
-                Password = "new"
-         
-            };
-
-            
-
-            var result = await authService.RegisterAsync(registerRequest);
-            Assert.NotNull(result);
+            await Assert.ThrowsAsync<BusinessRuleException>(() =>
+                _authService.RegisterAsync(new RegisterRequestDto { Email = "existing@gmail.com", Password = "test" }));
         }
 
+        [Fact]
+        public async Task RegisterAsync_ValidRequest_StoresNormalizedEmailUserRoleAndHashedPassword()
+        {
+            User? savedUser = null;
+            _userRepo.Setup(r => r.FindUserByEmail("new@gmail.com")).ReturnsAsync((User?)null);
+            _userRepo.Setup(r => r.AddUser(It.IsAny<User>())).Callback<User>(u => savedUser = u);
+            _userRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(true);
 
+            var result = await _authService.RegisterAsync(new RegisterRequestDto { Email = "  New@Gmail.COM ", Password = "secret" });
 
+            Assert.NotNull(savedUser);
+            Assert.Equal("new@gmail.com", savedUser!.Email);
+            Assert.Equal(Roles.User, savedUser.Role);
+            Assert.NotEqual("secret", savedUser.PasswordHash);
+            Assert.True(BCrypt.Net.BCrypt.Verify("secret", savedUser.PasswordHash));
+            Assert.Equal(savedUser.Id, result.UserId);
+            Assert.False(string.IsNullOrEmpty(result.Token));
+        }
+
+        [Fact]
+        public async Task RegisterAsync_UniqueViolationOnSave_ThrowsBusinessRule()
+        {
+            _userRepo.Setup(r => r.FindUserByEmail("race@gmail.com")).ReturnsAsync((User?)null);
+            _userRepo.Setup(r => r.SaveChangesAsync())
+                .ThrowsAsync(new DbUpdateException("save failed",
+                    new PostgresException("duplicate key", "ERROR", "ERROR", PostgresErrorCodes.UniqueViolation)));
+
+            await Assert.ThrowsAsync<BusinessRuleException>(() =>
+                _authService.RegisterAsync(new RegisterRequestDto { Email = "race@gmail.com", Password = "x" }));
+        }
+
+        [Fact]
+        public async Task RegisterAsync_OtherDatabaseError_IsNotTranslated()
+        {
+            _userRepo.Setup(r => r.FindUserByEmail("fk@gmail.com")).ReturnsAsync((User?)null);
+            _userRepo.Setup(r => r.SaveChangesAsync())
+                .ThrowsAsync(new DbUpdateException("save failed",
+                    new PostgresException("fk violation", "ERROR", "ERROR", PostgresErrorCodes.ForeignKeyViolation)));
+
+            await Assert.ThrowsAsync<DbUpdateException>(() =>
+                _authService.RegisterAsync(new RegisterRequestDto { Email = "fk@gmail.com", Password = "x" }));
+        }
+
+        [Fact]
+        public async Task RegisterAsync_SaveReturnsFalse_ThrowsInvalidOperation()
+        {
+            _userRepo.Setup(r => r.FindUserByEmail("nosave@gmail.com")).ReturnsAsync((User?)null);
+            _userRepo.Setup(r => r.SaveChangesAsync()).ReturnsAsync(false);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _authService.RegisterAsync(new RegisterRequestDto { Email = "nosave@gmail.com", Password = "x" }));
+        }
     }
 }
-

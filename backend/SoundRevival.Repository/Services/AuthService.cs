@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Repository.Entities;
@@ -27,9 +29,12 @@ namespace SoundRevival.Repository.Services
             
         }
 
+     
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            var existingUser = await _repository.FindUserByEmail(request.Email);
+            var email = NormalizeEmail(request.Email);
+
+            var existingUser = await _repository.FindUserByEmail(email);
 
             if(existingUser != null)
             {
@@ -39,7 +44,7 @@ namespace SoundRevival.Repository.Services
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Email = request.Email,
+                Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 DisplayName = request.DisplayName,
                 Role = Roles.User,
@@ -48,7 +53,17 @@ namespace SoundRevival.Repository.Services
             };
 
             _repository.AddUser(user);
-            var saved = await _repository.SaveChangesAsync();
+            bool saved;
+
+            try
+            {
+                saved = await _repository.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                // Two concurrent registrations passed the check above: the DB unique index is the real guard.
+                throw new BusinessRuleException("Email already registered");
+            }
 
             if (!saved)
             {
@@ -60,7 +75,9 @@ namespace SoundRevival.Repository.Services
         }
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _repository.FindUserByEmail(request.Email);
+            var email = NormalizeEmail(request.Email);
+
+            var user = await _repository.FindUserByEmail(email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
@@ -106,6 +123,10 @@ namespace SoundRevival.Repository.Services
                 Role = user.Role
             };
 
+        }
+        private static string NormalizeEmail(string email)
+        {
+            return email.Trim().ToLowerInvariant();
         }
     }
 }
