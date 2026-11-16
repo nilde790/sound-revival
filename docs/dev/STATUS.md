@@ -115,6 +115,7 @@ being touched. Remove a row when fixed.
 | C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
+| C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (fix before phase 4, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
 | C8 🟡 | Unknown-email login skips `BCrypt.Verify`: timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
 | C9 🟡 | No CORS policy | `Program.cs` | SEC-8 |
 | C10 🟡 | `UseHttpsRedirection` with an HTTP-only launch profile | `Program.cs` | CFG-2 |
@@ -125,7 +126,6 @@ being touched. Remove a row when fixed.
 |---|---|---|---|
 | A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name (rename/split needs an ADR) | solution | ADR-004 |
 | A2 🟠 | Repository interface takes HTTP DTOs | `IListingRepository` | ARCH-6 |
-| A3 🟠 | JWT generation inside `AuthService` | `AuthService` | ARCH-5 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
 | A7 🟡 | `UpdatedAt` now set by `ListingService` on update/status, but timestamps still come from entity defaults (`DateTime.UtcNow` initializers), not one place | entities, services | DATA-4 |
@@ -167,7 +167,9 @@ before the error handling step).
    `AuthService` and `JwtBearer` use it; app start not yet checked 
    manually); ~~C6~~ ✅ done (search via `ToLower().Contains`: EF 
    escapes the term; trimmed, lowered invariant; checked manually, covered 
-   by integration tests in phase 2); A3 open
+   by integration tests in phase 2); ~~A3~~ ✅ done (`ITokenService` / 
+   `JwtTokenService`, `AuthService` no longer reads `JwtSettings`; 
+   `AuthServiceTests` mock the token, 4 new `JwtTokenServiceTests`)
 8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
    called), `MaxDecimalPlacesAttribute` and the DTO annotations 

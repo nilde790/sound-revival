@@ -38,7 +38,8 @@ See [`../06-Architecture.md`](../06-Architecture.md) and ADR-004.
   (EF Core's Unit of Work): saving through *any* repository commits *all* 
   pending changes of the request.
 - **ARCH-5 (SHOULD) One responsibility per class**: token generation, 
-  clock, external APIs go behind their own interface (debt A3).
+  clock, external APIs go behind their own interface (example: 
+  `ITokenService` / `JwtTokenService`).
 - **ARCH-6 (SHOULD) Don't leak contracts across layers**: repositories 
   take simple parameters or an inner-layer query object, not HTTP DTOs 
   (existing deviation: A2 — don't copy it).

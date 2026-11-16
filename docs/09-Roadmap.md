@@ -47,13 +47,13 @@ feature will reuse: validation, error handling, authorization, tests.
 | Status | Item | Refs |
 |---|---|---|
 | ✅ | Listing repository with filtering + pagination | — |
-| 🚧 | Listing DTOs with DataAnnotations (create, update, status, response, paged response) | ADR-010, C4 |
-| ⬜ | Error handling infrastructure: custom exceptions + global `IExceptionHandler` + `ProblemDetails` | ADR-009 |
-| ⬜ | Migrate auth to the new error pattern; validate auth DTOs | E1, C4 |
-| ⬜ | `ListingService`: ownership/admin checks, allowed values, status rules | FR-6..10, FR-18 |
-| ⬜ | `ListingsController` (CRUD + `PATCH /status`) | 07-API-Design |
-| ⬜ | Fix correctness debt in touched code: bounded pagination, email normalization, duplicate-email race, LIKE escaping, default sort newest | C1, C2, C3, C6, C11 |
-| ⬜ | Options pattern for JWT settings; token generation behind its own interface | C7, A3 |
+| ✅ | Listing DTOs with DataAnnotations (create, update, status, response, paged response) | ADR-010, C4 |
+| ✅ | Error handling infrastructure: custom exceptions + global `IExceptionHandler` + `ProblemDetails` | ADR-009 |
+| ✅ | Migrate auth to the new error pattern; validate auth DTOs | E1, C4 |
+| ✅ | `ListingService`: ownership/admin checks, allowed values, status rules | FR-6..10, FR-18 |
+| ✅ | `ListingsController` (CRUD + `PATCH /status`) | 07-API-Design |
+| 🚧 | Fix correctness debt in touched code: bounded pagination, email normalization, duplicate-email race, LIKE escaping, default sort newest (`sort` parameter still open) | C1, C2, C3, C6, C11 |
+| ✅ | Options pattern for JWT settings; token generation behind its own interface | C7, A3 |
 | ⬜ | Unit tests for `ListingService`; fix `AuthServiceTests` | T1, T2, T3 |
 
 **Done when**: every listings endpoint in 07-API-Design.md works as 

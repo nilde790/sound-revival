@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Moq;
 using Npgsql;
 using SoundRevival.Dto.Auth;
@@ -8,7 +7,6 @@ using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Services;
-using SoundRevival.Repository.Settings;
 
 namespace SoundRevival.Tests.Mock
 {
@@ -17,19 +15,17 @@ namespace SoundRevival.Tests.Mock
         // xUnit creates a new instance of this class for every test,
         // so these fields are fresh (and the mock has no leftover setups) each time.
         private readonly Mock<IUserRepository> _userRepo = new();
+        private readonly Mock<ITokenService> _tokenService = new();
         private readonly AuthService _authService;
+
+        private const string FakeToken = "fake-token";
 
         public AuthServiceTests()
         {
-            var jwtSettings = Options.Create(new JwtSettings
-            {
-                Key = "questa-e-una-chiave-segreta-diversamente-lunga-cambiala-in-produzione-12345",
-                Issuer = "SoundRevival",
-                Audience = "SoundRevivalUsers",
-                ExpiryMinutes = 60
-            });
+            // Token creation is JwtTokenService's job (tested separately): here it only has to return something.
+            _tokenService.Setup(t => t.GenerateToken(It.IsAny<User>())).Returns(FakeToken);
 
-            _authService = new AuthService(_userRepo.Object, jwtSettings);
+            _authService = new AuthService(_userRepo.Object, _tokenService.Object);
         }
 
         private static User CreateUser(string email, string password) => new()
@@ -50,7 +46,19 @@ namespace SoundRevival.Tests.Mock
             var result = await _authService.LoginAsync(new LoginRequestDto { Email = "test@gmail.com", Password = "prova" });
 
             Assert.Equal(user.Id, result.UserId);
-            Assert.False(string.IsNullOrEmpty(result.Token));
+            Assert.Equal(FakeToken, result.Token);
+            _tokenService.Verify(t => t.GenerateToken(user), Times.Once);
+        }
+
+        [Fact]
+        public async Task LoginAsync_WrongPassword_DoesNotGenerateToken()
+        {
+            _userRepo.Setup(r => r.FindUserByEmail("test@gmail.com")).ReturnsAsync(CreateUser("test@gmail.com", "correct"));
+
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() =>
+                _authService.LoginAsync(new LoginRequestDto { Email = "test@gmail.com", Password = "wrong" }));
+
+            _tokenService.Verify(t => t.GenerateToken(It.IsAny<User>()), Times.Never);
         }
 
         [Fact]
@@ -109,7 +117,8 @@ namespace SoundRevival.Tests.Mock
             Assert.NotEqual("secret", savedUser.PasswordHash);
             Assert.True(BCrypt.Net.BCrypt.Verify("secret", savedUser.PasswordHash));
             Assert.Equal(savedUser.Id, result.UserId);
-            Assert.False(string.IsNullOrEmpty(result.Token));
+            Assert.Equal(FakeToken, result.Token);
+            _tokenService.Verify(t => t.GenerateToken(savedUser), Times.Once);
         }
 
         [Fact]
