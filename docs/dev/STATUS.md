@@ -112,7 +112,6 @@ being touched. Remove a row when fixed.
 | ID | Issue | Where | Rule |
 |---|---|---|---|
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
-| C6 🟠 | Search term not escaped in `ILIKE` (`%`, `_` act as wildcards) | `ListingRepository` | VAL-6 |
 | C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
@@ -166,7 +165,8 @@ before the error handling step).
    `BusinessRuleException`, 5 new tests, T1 closed); ~~C7~~ ✅ done 
    (uncommitted; `JwtSettings` + Options with `ValidateOnStart`, 
    `AuthService` and `JwtBearer` use it; app start not yet checked 
-   manually); C6, A3 open
+   manually); ~~C6~~ ✅ done (`LikePattern.Escape` + `ILike` with 
+   explicit escape character, search trimmed, 6 unit tests); A3 open
 8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
    called), `MaxDecimalPlacesAttribute` and the DTO annotations 

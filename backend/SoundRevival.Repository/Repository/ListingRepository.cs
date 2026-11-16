@@ -71,7 +71,11 @@ namespace SoundRevival.Repository.Repository
             }
             if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                query = query.Where(l => EF.Functions.ILike(l.Title, $"%{filter.Search}%") || EF.Functions.ILike(l.Description, $"%{filter.Search}%"));
+                var pattern = LikePattern.Contains(filter.Search.Trim());
+
+                query = query.Where(l =>
+                    EF.Functions.ILike(l.Title, pattern, LikePattern.EscapeCharacter) ||
+                    EF.Functions.ILike(l.Description, pattern, LikePattern.EscapeCharacter));
 
             }
           
