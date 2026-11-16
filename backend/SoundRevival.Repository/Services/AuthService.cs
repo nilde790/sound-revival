@@ -47,7 +47,7 @@ namespace SoundRevival.Repository.Services
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                DisplayName = request.DisplayName,
+                DisplayName = request.DisplayName.Trim(),
                 Role = Roles.User,
                 CreatedAt = DateTime.UtcNow
 

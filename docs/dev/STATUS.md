@@ -111,7 +111,6 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| C4 🔴 | Listing DTOs annotated; **auth DTOs** (`RegisterRequestDto`, `LoginRequestDto`) still unvalidated | auth request DTOs | VAL-1 |
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C6 🟠 | Search term not escaped in `ILIKE` (`%`, `_` act as wildcards) | `ListingRepository` | VAL-6 |
 | C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |

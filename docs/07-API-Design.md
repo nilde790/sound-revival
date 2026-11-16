@@ -115,9 +115,12 @@ Errors: `400` on invalid fields or if the email is already registered
 ```json
 { "email": "user@example.com", "password": "..." }
 ```
-Errors: `401` on unknown email or wrong password (same message for both, 
-so the API doesn't reveal which emails are registered); `429` when rate 
-limited.
+Errors: `400` when a field is missing or too long (login checks only 
+presence and the upper bounds, not the 8-char password minimum: that is 
+a creation rule, and enforcing it here would lock out passwords created 
+under an older policy); `401` on unknown email or wrong password (same 
+message for both, so the API doesn't reveal which emails are 
+registered); `429` when rate limited.
 
 Both endpoints return `200` with the same body (`AuthResponseDto`), so a 
 user is logged in immediately after registering:

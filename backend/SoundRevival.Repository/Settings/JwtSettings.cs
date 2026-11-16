@@ -5,6 +5,7 @@ namespace SoundRevival.Repository.Settings
     public class JwtSettings
     {
         [Required]
+        [MinLength(32)]
         public required string Key {  get; set; }
         [Required]
         public required string Issuer { get; set; }
