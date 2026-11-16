@@ -20,9 +20,9 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 | Endpoint | State |
 |---|---|
-| `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, unit tested (old error pattern, debt E1) |
-| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented and checked manually (uncommitted); unit tests missing |
-| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented and checked manually (uncommitted); unit tests missing |
+| `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, validated, unit tested, checked manually (2026-11-16) |
+| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented and checked manually; unit tests missing |
+| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented and checked manually; unit tests missing |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
 | `GET /health` | ⬜ phase 2 |
@@ -81,7 +81,7 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     `Conditions`, `Statuses` (`IReadOnlySet<string>`, exact match).
   - Status transitions decided and documented in 07-API-Design.md 
     (`sold` ↔ `available` both allowed, same status is a no-op).
-- ✅ **Step 4 — `ListingsController`** (**uncommitted**): 
+- ✅ **Step 4 — `ListingsController`** (`ccc76d3`): 
   `IListingService` registered with `AddScoped`; all six endpoints, thin 
   (no `try/catch`), explicit `[Authorize]`/`[AllowAnonymous]`, `201` + 
   `Location` via `CreatedAtAction`, `204` for delete/status. Current user 
@@ -96,6 +96,24 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     `ParseLimitsInInvariantCulture` (on an Italian machine `"0.01"` threw 
     → 500 on every create). New rule VAL-8.
   - 9 listing read requests added to `SoundRevival.WebApi.http`.
+- ✅ **Steps 5–7 — constants and auth hardening**:
+  - `Roles` / `ListingValues` constants replace literals (`1501028`).
+  - Auth migrated to ADR-009 exceptions + global handler (`6df5833`).
+  - Email normalized (`Trim().ToLowerInvariant()`), unique violation 
+    `23505` → `BusinessRuleException` (`1d7149d`).
+  - `JwtSettings` via Options with `ValidateDataAnnotations` + 
+    `ValidateOnStart`; `Key` at least 32 chars; `JwtBearer` reads the 
+    same validated options (`65aed97`, `2d92b4d`). Checked: an invalid 
+    setting stops startup.
+  - Auth DTOs annotated per 07-API-Design (login: presence and upper 
+    bounds only), `DisplayName` trimmed (`2d92b4d`).
+  - Search matched literally: `column.ToLower().Contains(term)`, EF 
+    escapes the term (`7647363`; replaces the hand-written escape of 
+    `80a1876`). SQL checked in the EF command log.
+  - `ITokenService` / `JwtTokenService` (`4091ebb`): `AuthService` no 
+    longer reads `JwtSettings`.
+  - 14 unit tests (10 `AuthService`, 4 `JwtTokenService`). Auth flow and 
+    search checked end to end with curl on 2026-11-16.
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
 
@@ -157,23 +175,17 @@ before the error handling step).
 2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done
 3. ~~`ListingService`~~ ✅ done; `sort` (C11) still open
 4. ~~`ListingsController`~~ ✅ done and committed, C1 closed
-5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done (uncommitted)
-6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done (uncommitted; not yet 
-   checked manually with Postman)
-7. Fix touched debt: ~~C2, C3~~ ✅ done (uncommitted; email normalized 
-   with `Trim().ToLowerInvariant()`, unique violation `23505` → 
-   `BusinessRuleException`, 5 new tests, T1 closed); ~~C7~~ ✅ done 
-   (uncommitted; `JwtSettings` + Options with `ValidateOnStart`, 
-   `AuthService` and `JwtBearer` use it; app start not yet checked 
-   manually); ~~C6~~ ✅ done (search via `ToLower().Contains`: EF 
-   escapes the term; trimmed, lowered invariant; checked manually, covered 
-   by integration tests in phase 2); ~~A3~~ ✅ done (`ITokenService` / 
-   `JwtTokenService`, `AuthService` no longer reads `JwtSettings`; 
-   `AuthServiceTests` mock the token, 4 new `JwtTokenServiceTests`)
-8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
-   admin, stranger; invalid category/condition/status; 404s; save 
-   called), `MaxDecimalPlacesAttribute` and the DTO annotations 
-   (`Validator.TryValidateObject`); fix `AuthServiceTests` (T1–T3)
+5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
+6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
+7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
+8. **Next**: unit tests for `ListingService` (above all 
+   `CheckOwnership`: owner, admin, stranger; invalid 
+   category/condition/status; 404s; save called), 
+   `MaxDecimalPlacesAttribute` and the DTO annotations 
+   (`Validator.TryValidateObject`, auth DTOs included); move 
+   `AuthServiceTests` out of `Mock/` (T3)
+9. Then close phase 1: `sort` parameter (C11), merge 
+   `feature/CRUDlistings` into `main` via PR
 
 Working mode: `/learn-code` — the developer writes the code, Claude 
 explains, gives hints on other examples and reviews each file against the 
@@ -183,6 +195,6 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-15 — `ListingsController` committed; B5 closed 
-(`Roles.Admin`/`Roles.User`, `ListingValues.Available`/`Sold`), not 
-committed yet; next: commit, auth migration (E1).*
+*Last updated: 2026-11-16 — auth and JWT verified end to end; C4, C6, 
+A3 closed and committed (`2d92b4d`..`4091ebb`); new debt C13; roadmap 
+phase 1 statuses aligned. Next: step 8 (unit tests).*
