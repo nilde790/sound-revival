@@ -165,8 +165,9 @@ before the error handling step).
    `BusinessRuleException`, 5 new tests, T1 closed); ~~C7~~ ✅ done 
    (uncommitted; `JwtSettings` + Options with `ValidateOnStart`, 
    `AuthService` and `JwtBearer` use it; app start not yet checked 
-   manually); ~~C6~~ ✅ done (`LikePattern.Escape` + `ILike` with 
-   explicit escape character, search trimmed, 6 unit tests); A3 open
+   manually); ~~C6~~ ✅ done (search via `ToLower().Contains`: EF 
+   escapes the term; trimmed, lowered invariant; checked manually, covered 
+   by integration tests in phase 2); A3 open
 8. Unit tests for `ListingService` (above all `CheckOwnership`: owner, 
    admin, stranger; invalid category/condition/status; 404s; save 
    called), `MaxDecimalPlacesAttribute` and the DTO annotations 

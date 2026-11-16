@@ -66,9 +66,10 @@ cross-field rules; data-dependent rules in the service
 - **VAL-5 (MUST) Money is `decimal`**, positive, ≤ 2 decimals, bounded. 
   Never `double`.
 - **VAL-6 (MUST) Escape `%`, `_`, `\` in user text used in `LIKE`/`ILIKE`.** 
-  Not injection (EF parameterizes), but `%` would match everything. Use 
-  `LikePattern.Contains(text)` with 
-  `EF.Functions.ILike(column, pattern, LikePattern.EscapeCharacter)`.
+  Not injection (EF parameterizes), but `%` would match everything. 
+  Prefer `column.ToLower().Contains(term)` (term lowered with 
+  `ToLowerInvariant()`): EF escapes the term itself. A hand-built pattern 
+  in `EF.Functions.ILike` must be escaped explicitly.
 - **VAL-7 (MUST) No security-relevant fields in request bodies**: owner 
   id from the token; no `role`, `userId`, `id`, `createdAt`, nor `status` 
   outside its endpoint. *Why*: mass assignment (OWASP API Top 10).

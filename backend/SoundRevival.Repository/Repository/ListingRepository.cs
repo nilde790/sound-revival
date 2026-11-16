@@ -71,11 +71,13 @@ namespace SoundRevival.Repository.Repository
             }
             if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                var pattern = LikePattern.Contains(filter.Search.Trim());
+                // EF translates string.Contains to LIKE with the term escaped, so % and _ are matched literally.
+                // Case-insensitive: the column is lowered in SQL (lower()), the term here with the invariant culture.
+                var term = filter.Search.Trim().ToLowerInvariant();
 
                 query = query.Where(l =>
-                    EF.Functions.ILike(l.Title, pattern, LikePattern.EscapeCharacter) ||
-                    EF.Functions.ILike(l.Description, pattern, LikePattern.EscapeCharacter));
+                    l.Title.ToLower().Contains(term) ||
+                    l.Description.ToLower().Contains(term));
 
             }
           
