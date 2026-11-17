@@ -8,7 +8,7 @@ using SoundRevival.Repository.Exceptions;
 using SoundRevival.Repository.Interfaces;
 using SoundRevival.Repository.Services;
 
-namespace SoundRevival.Tests.Mock
+namespace SoundRevival.Tests.Services
 {
     public class AuthServiceTests
     {
