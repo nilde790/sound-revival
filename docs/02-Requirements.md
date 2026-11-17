@@ -135,3 +135,8 @@ admin moderation dashboard, dynamic categories, token refresh) is
 committed scope after v1; its requirements will be added here when each 
 feature is started. Real payments, real shipping and multi-language 
 remain out of scope. See `01-Vision.md` and `09-Roadmap.md`.
+
+Exploratory product ideas (trade listings, multi-party trade matching, 
+audio demos, smart wishlists, natural-language search, gear value) are 
+collected in [09-Roadmap.md → Product ideas](09-Roadmap.md#product-ideas--differentiators-exploratory-not-committed). 
+They get requirement ids only if and when they are adopted.

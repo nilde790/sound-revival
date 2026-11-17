@@ -173,6 +173,10 @@ Candidates, each to be evaluated in 15-AI-Integration.md (problem,
 value, skills, integration, alternatives, cost, worth the complexity?):
 - Listing description assistant (from keywords or photos)
 - Semantic search ("beginner guitar under €300") with `pgvector`
+- Natural-language search assistant: an LLM turns free text ("Les Paul 
+  around €700, not damaged") into the existing structured filters 
+  (brand, model, price, condition); voice input later via 
+  speech-to-text. See [Product ideas](#product-ideas--differentiators-exploratory-not-committed)
 - Automatic moderation of listing text
 - Price suggestion from similar listings
 - A chatbot (expected to be the least justified for a marketplace)
@@ -203,6 +207,32 @@ ADR where there are trade-offs.
   image processing, embeddings for semantic search 🟢
 - Caching with `HybridCache`, only if measurements justify it 🟢
 - .NET Aspire for local orchestration and the telemetry dashboard 🟣
+
+## Product ideas — differentiators (exploratory, not committed)
+
+Ideas that could make SoundRevival stand out from existing music-gear 
+marketplaces, collected on 2026-11-17. They are **not committed scope**: 
+none has requirements or an ADR yet. If one is adopted, it follows the 
+v2 rule (requirements in 02-Requirements.md first, ADR where there are 
+trade-offs).
+
+Competitor check (web search, November 2026: Reverb, eBay, Mercatino 
+Musicale, Subito, Resyn, generic barter apps). A search can show that a 
+feature exists, not that it is missing: re-check before committing.
+
+| # | Idea | Competitors (Nov 2026) | Notes |
+|---|---|---|---|
+| 1 | **Natural-language search assistant** (text, later voice) | eBay is rolling out conversational search (small share of US users); Reverb has no native one; none found on Subito / Mercatino Musicale | Advantage in the Italian music niche, easy to copy. Fits Phase 6 (LLM → filter DTO → existing search) |
+| 2 | **Multi-party trade matching** (A wants B's item, B wants C's, C wants A's) | Not found in music marketplaces; Resyn supports trade offers between two users only; 2–4-party cycles exist in generic barter apps (xwap, SwapIt) | Most original idea. Algorithm = cycle detection in a directed graph (like kidney exchange). Hard parts: execution (a party drops out, value balancing with cash, simultaneous shipping, escrow) and cold start (few users → few cycles). Depends on 3 and 6 |
+| 3 | **Listing open to sale and/or trade**, with the gear categories accepted in exchange | Mercatino Musicale: trade availability appears only as free text in the description (no structured field found) | Cheap, useful on its own, and the data foundation for 2. Best first candidate |
+| 4 | **Gear value** (estimated market value) | Reverb Price Guide (from completed sales); Sweetwater Price Advisor | Not a differentiator; needs completed-sale data a new marketplace lacks (asking prices are biased). Useful as a support tool to balance trades |
+| 5 | **Audio demos** on listings, with a mandatory list of the recording chain (transparency) | Reverb: only embedded YouTube videos; no native audio or mandatory chain disclosure found | Distinctive and cheap (upload + recording-chain table). Disclosed chain is not verifiable; needs storage and moderation |
+| 6 | **Smart wishlists and predictive notifications** | Reverb: saved searches, watch list, price-drop alerts | Plain alerts are standard. Distinctive when the wishlist feeds trade matching (the "wants" edges of 2). Prediction needs historical data |
+
+The strongest combination is **3 + 6 + 2**: the listing says what a user 
+offers, the wishlist says what they want, the engine finds the chain. 
+5 is a low-cost distinctive touch; 1 and 4 are expected rather than 
+differentiating.
 
 ## Explicitly out of scope (no plans to implement)
 
