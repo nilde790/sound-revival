@@ -199,7 +199,8 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 - **TEST-4 (SHOULD)** No copy-pasted setup: constructor or builder 
   helpers (xUnit creates a new instance per test).
 - **TEST-5 (MUST)** Unit tests: no DB, network, file system, real clock 
-  or randomness.
+  or randomness. Time: pass a `FakeTimeProvider` 
+  (`Microsoft.Extensions.TimeProvider.Testing`) and assert exact values.
 - **TEST-6 (MUST) Right level**: services → unit tests with mocks; EF 
   queries and HTTP behaviour → integration tests on real PostgreSQL. 
   Don't mock `DbContext`.
@@ -210,7 +211,10 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 
 - **STYLE-1 (MUST)** Conventions: block-scoped namespaces matching 
   folders, `_camelCase` readonly fields, constructor injection, 
-  `Guid.NewGuid()` in services, `DateTime.UtcNow`.
+  `Guid.NewGuid()` in services; current time from an injected 
+  `TimeProvider` (`GetUtcNow().UtcDateTime`, registered as 
+  `TimeProvider.System`), never `DateTime.UtcNow` in services 
+  (remaining uses: debt A7).
 - **STYLE-2 (MUST)** Zero build warnings (enforcement planned: B1).
 - **STYLE-3 (SHOULD)** No unused `using`s, dead or commented-out code; 
   consistent formatting (`dotnet format`, planned).

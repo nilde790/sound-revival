@@ -28,6 +28,8 @@ builder.Services.AddScoped<IUserRepository,UserRepository>();
 builder.Services.AddScoped<IListingRepository, ListingRepository>();
 builder.Services.AddScoped<IListingService, ListingService>();
 
+builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddControllers();
 
 

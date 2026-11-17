@@ -11,9 +11,12 @@ namespace SoundRevival.Repository.Services
     {
         private readonly IListingRepository _listingRepository;
 
-        public ListingService(IListingRepository listingRepository)
+        private readonly TimeProvider _timeProvider;
+
+        public ListingService(IListingRepository listingRepository, TimeProvider timeProvider)
         {
             _listingRepository = listingRepository;
+            _timeProvider = timeProvider;
         }
 
         private static ListingDetailResponseDto MapToDetails(Guid? userId, Listing listing)
@@ -174,7 +177,7 @@ namespace SoundRevival.Repository.Services
             listingToUpdate.Description = description;
             listingToUpdate.Title = title;
             listingToUpdate.Price = request.Price;
-            listingToUpdate.UpdatedAt = DateTime.UtcNow;
+            listingToUpdate.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
 
             var updated = await _listingRepository.SaveChangesAsync();
@@ -219,7 +222,7 @@ namespace SoundRevival.Repository.Services
 
 
             listingToUpdate.Status = status;
-            listingToUpdate.UpdatedAt = DateTime.UtcNow;
+            listingToUpdate.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
             var updated = await _listingRepository.SaveChangesAsync();
             if (!updated)
