@@ -22,7 +22,9 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, validated, unit tested, checked manually (2026-11-16) |
 | `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented and checked manually; unit tests missing |
-| `POST`, `PUT`, `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented and checked manually; unit tests missing |
+| `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented, checked manually, service unit tested |
+| `PUT /api/listings/{id}` | ✅ implemented and checked manually; service unit tests partial (happy path missing) |
+| `POST /api/listings` | ✅ implemented and checked manually; unit tests missing |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
 | `GET /health` | ⬜ phase 2 |
@@ -114,6 +116,23 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     longer reads `JwtSettings`.
   - 14 unit tests (10 `AuthService`, 4 `JwtTokenService`). Auth flow and 
     search checked end to end with curl on 2026-11-16.
+- 🔄 **Step 8 — `ListingService` unit tests** (in progress, 
+  `SoundRevival.Tests/Services/ListingServiceTests.cs`, 25 tests):
+  - helpers `CreateListing(ownerId)` and `CreateUpdateRequest()` (valid 
+    defaults, each test changes one field); `FakeTimeProvider` passed to 
+    the constructor;
+  - `DeleteAsync` complete: stranger 403, owner, admin, 404, save fails 
+    (`Verify(..., Times.Never/Once)` on `DeleteListing` and 
+    `SaveChangesAsync`);
+  - `ChangeStateAsync` complete: 403, 404, save fails, invalid status 
+    (`[Theory]`: unknown word, wrong case, empty, spaces only), valid 
+    status sets `Status` and exact `UpdatedAt`;
+  - `UpdateAsync`: 403, 404, save fails, invalid category / condition 
+    (`[Theory]`). Missing: happy path.
+  - `ListingService` now takes `TimeProvider` (registered as 
+    `TimeProvider.System` singleton) for `UpdatedAt`; STYLE-1 and TEST-5 
+    updated.
+  - Test files moved from `Mock/` to `Services/` (T3 closed).
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
 
@@ -146,7 +165,7 @@ being touched. Remove a row when fixed.
 | A2 🟠 | Repository interface takes HTTP DTOs | `IListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
-| A7 🟡 | `UpdatedAt` now set by `ListingService` on update/status, but timestamps still come from entity defaults (`DateTime.UtcNow` initializers), not one place | entities, services | DATA-4 |
+| A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
 | A9 🟡 | `AppException` responses (404/403/400) lack the `type` and `traceId` fields the framework adds to the 500: two slightly different `ProblemDetails` shapes. Option: write them with `IProblemDetailsService` | `GlobalExceptionHandler` | ERR-4 |
 | A8 🟡 | No `CancellationToken` propagation | repositories, services, controllers | ASYNC-2 |
 
@@ -154,7 +173,6 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| T3 🟡 | Folder `Mock/` is misleading (test names are fixed in `AuthServiceTests`) | `SoundRevival.Tests` | TEST-7 |
 | T4 🟡 | No integration tests yet (phase 2) | `SoundRevival.Tests` | TEST-6 |
 
 **Build & tooling** (phase 2)
@@ -178,12 +196,23 @@ before the error handling step).
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
 6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
 7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
-8. **Next**: unit tests for `ListingService` (above all 
-   `CheckOwnership`: owner, admin, stranger; invalid 
-   category/condition/status; 404s; save called), 
-   `MaxDecimalPlacesAttribute` and the DTO annotations 
-   (`Validator.TryValidateObject`, auth DTOs included); move 
-   `AuthServiceTests` out of `Mock/` (T3)
+8. **In progress** — unit tests (state in §3). Resume with, in order:
+   1. `UpdateAsync_ValidRequest_UpdatesListingAndReturnsDetail` 
+      (developer writes it; new: second setup on 
+      `GetListingDetailByIdAsync` for the reload, `Trim()` of fields 
+      checked on the entity, returned DTO asserted, seller email present 
+      for an authenticated user, exact `UpdatedAt`);
+   2. `CreateAsync`: invalid category/condition, save fails, reload 
+      returns null → `InvalidOperationException`, happy path (new: 
+      capture the entity passed to `AddListing` with `Callback` or 
+      `It.Is<>` to check trimmed fields and `UserId` from the parameter);
+   3. `GetByIdAsync`: 404, email shown only when `userId` is not null, 
+      images ordered by `DisplayOrder`;
+   4. `GetListingsAsync`: mapping to summary, paging fields;
+   5. `MaxDecimalPlacesAttribute` and DTO annotations 
+      (`Validator.TryValidateObject`, auth DTOs included).
+   Working split agreed: Claude writes repetitive tests, the developer 
+   writes each test that introduces a new pattern.
 9. Then close phase 1: `sort` parameter (C11), merge 
    `feature/CRUDlistings` into `main` via PR
 
@@ -195,6 +224,7 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-16 — auth and JWT verified end to end; C4, C6, 
-A3 closed and committed (`2d92b4d`..`4091ebb`); new debt C13; roadmap 
-phase 1 statuses aligned. Next: step 8 (unit tests).*
+*Last updated: 2026-11-17 — step 8 started: 25 `ListingService` tests 
+(39 total, all green, build warning-free); `TimeProvider` injected; T3 
+closed, A7 narrowed; product ideas added to the roadmap. Next: 
+`UpdateAsync` happy path.*
