@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Time.Testing;
 using Moq;
+using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
 using SoundRevival.Repository.Entities;
@@ -46,6 +47,18 @@ namespace SoundRevival.Tests.Services
             Category = "Guitars",
             Condition = "Like New"
         };
+
+        // A valid create request: each test changes only the field its scenario is about.
+        private static CreateListingRequestDto CreateCreateRequest() => new()
+        {
+            Title = "Yamaha P-125",
+            Description = "Digital piano, like new",
+            Price = 450m,
+            Category = "Keyboards",
+            Condition = "Like New"
+        };
+
+
 
         // ---------- DeleteAsync ----------
 
@@ -285,6 +298,265 @@ namespace SoundRevival.Tests.Services
             _mockRepo.Setup(l => l.SaveChangesAsync()).ReturnsAsync(false);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _listingService.UpdateAsync(listing.Id, ownerId, CreateUpdateRequest(), isAdmin: false));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ValidRequest_UpdatesListingAndReturnsDetail()
+        {
+            var ownerId = Guid.NewGuid();
+            var listingToUpdate = CreateListing(ownerId);
+            var now = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+            _timeProvider.SetUtcNow(now);
+            var request = CreateUpdateRequest();
+            request.Title = "   Title   ";
+            request.Description = "  Description  ";
+            request.Category = "  Guitars  ";
+            request.Condition = " New  ";
+
+            _mockRepo.Setup(l => l.GetListingByIdAsync(listingToUpdate.Id)).ReturnsAsync(listingToUpdate);
+            _mockRepo.Setup(l => l.SaveChangesAsync()).ReturnsAsync(true);
+
+            var reloadedListing = CreateListing(ownerId);
+            reloadedListing.Id = listingToUpdate.Id;
+            reloadedListing.Title = "Reloaded title";
+
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(listingToUpdate.Id)).ReturnsAsync(reloadedListing);
+
+      
+            var result = await _listingService.UpdateAsync(listingToUpdate.Id, ownerId, request, isAdmin: false);
+
+            Assert.Equal("Title",listingToUpdate.Title);
+            Assert.Equal("Description", listingToUpdate.Description);
+            Assert.Equal("Guitars", listingToUpdate.Category);
+            Assert.Equal("New", listingToUpdate.Condition);
+            Assert.Equal(request.Price, listingToUpdate.Price);
+            Assert.Equal(now.UtcDateTime, listingToUpdate.UpdatedAt);
+
+            Assert.Equal(listingToUpdate.Id, result.Id);
+            Assert.Equal("owner@test.com", result.Seller.Email);
+            Assert.Equal("Reloaded title", result.Title);
+
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Once());
+
+        }
+
+        // ---------- CreateAsync ----------
+
+        [Theory]
+        [InlineData("Banjo")]
+        [InlineData("guitars")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task CreateAsync_InvalidCategory_ThrowsBusinessRuleException(string category)
+        {
+            var userId = Guid.NewGuid();
+            var request = CreateCreateRequest();
+            request.Category = category;
+
+            await Assert.ThrowsAsync<BusinessRuleException>(() => _listingService.CreateAsync(userId, request));
+
+            _mockRepo.Verify(l => l.AddListing(It.IsAny<Listing>()), Times.Never);
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("Broken")]
+        [InlineData("like new")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task CreateAsync_InvalidCondition_ThrowsBusinessRuleException(string condition)
+        {
+            var userId = Guid.NewGuid();
+            var request = CreateCreateRequest();
+            request.Condition = condition;
+
+            await Assert.ThrowsAsync<BusinessRuleException>(() => _listingService.CreateAsync(userId, request));
+
+            _mockRepo.Verify(l => l.AddListing(It.IsAny<Listing>()), Times.Never);
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateAsync_SaveFails_ThrowsInvalidOperationException()
+        {
+            var userId = Guid.NewGuid();
+
+            _mockRepo.Setup(l => l.SaveChangesAsync()).ReturnsAsync(false);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _listingService.CreateAsync(userId, CreateCreateRequest()));
+
+            _mockRepo.Verify(l => l.GetListingDetailByIdAsync(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateAsync_ReloadReturnsNull_ThrowsInvalidOperationException()
+        {
+            var userId = Guid.NewGuid();
+
+            _mockRepo.Setup(l => l.SaveChangesAsync()).ReturnsAsync(true);
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Listing?)null);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _listingService.CreateAsync(userId, CreateCreateRequest()));
+        }
+
+        [Fact]
+        public async Task CreateAsync_ValidRequest_AddsListingAndReturnsDetail()
+        {
+            var userId = Guid.NewGuid();
+            var request = CreateCreateRequest();
+            request.Title = " Title ";
+            request.Description = " Description ";
+            request.Category = " Guitars ";
+            request.Condition = " New ";
+
+            Listing? captured = null;
+
+            _mockRepo.Setup(l => l.AddListing(It.IsAny<Listing>())).Callback<Listing>(l => captured = l);
+            _mockRepo.Setup(l => l.SaveChangesAsync()).ReturnsAsync(true);
+
+            var reloadedListing = CreateListing(userId);
+            reloadedListing.Title = "Reloaded Title";
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(It.IsAny<Guid>())).ReturnsAsync(reloadedListing);
+
+            var result = await _listingService.CreateAsync(userId, request);
+
+            Assert.NotNull(captured);
+            Assert.NotEqual(Guid.Empty, captured.Id);
+            Assert.Equal("Title", captured.Title);
+            Assert.Equal("Description", captured.Description);
+            Assert.Equal("Guitars", captured.Category);
+            Assert.Equal("New", captured.Condition);
+            Assert.Equal(request.Price, captured.Price);
+            Assert.Equal(userId, captured.UserId);
+
+            Assert.Equal("Reloaded Title", result.Title);
+            Assert.Equal("owner@test.com", result.Seller.Email);
+
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Once);
+            _mockRepo.Verify(l => l.GetListingDetailByIdAsync(captured.Id), Times.Once);
+        }
+
+        // ---------- GetByIdAsync ----------
+
+        [Fact]
+        public async Task GetByIdAsync_ListingNotFound_ThrowsNotFoundException()
+        {
+            var fakeListingId = Guid.NewGuid();
+
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(fakeListingId)).ReturnsAsync((Listing?)null);
+
+            await Assert.ThrowsAsync<NotFoundException>(() => _listingService.GetByIdAsync(fakeListingId, userId: null));
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_AnonymousUser_HidesSellerEmail()
+        {
+            var listing = CreateListing(Guid.NewGuid());
+
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(listing.Id)).ReturnsAsync(listing);
+
+            var result = await _listingService.GetByIdAsync(listing.Id, userId: null);
+
+            Assert.Null(result.Seller.Email);
+            Assert.Equal(listing.User.DisplayName, result.Seller.DisplayName);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_AuthenticatedUser_ShowsSellerEmail()
+        {
+            var listing = CreateListing(Guid.NewGuid());
+            var viewerId = Guid.NewGuid();
+
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(listing.Id)).ReturnsAsync(listing);
+
+            var result = await _listingService.GetByIdAsync(listing.Id, viewerId);
+
+            Assert.Equal("owner@test.com", result.Seller.Email);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ListingWithImages_ReturnsImagesOrderedByDisplayOrder()
+        {
+            var listing = CreateListing(Guid.NewGuid());
+            var firstImage = new Image { Id = Guid.NewGuid(), Url = "img-1.jpg", DisplayOrder = 1 };
+
+            // Added out of order on purpose: the test only proves the sort if the input is unsorted.
+            listing.Images.Add(new Image { Id = Guid.NewGuid(), Url = "img-3.jpg", DisplayOrder = 3 });
+            listing.Images.Add(firstImage);
+            listing.Images.Add(new Image { Id = Guid.NewGuid(), Url = "img-2.jpg", DisplayOrder = 2 });
+
+            _mockRepo.Setup(l => l.GetListingDetailByIdAsync(listing.Id)).ReturnsAsync(listing);
+
+            var result = await _listingService.GetByIdAsync(listing.Id, userId: null);
+
+            Assert.Equal(new short[] { 1, 2, 3 }, result.Images.Select(i => i.DisplayOrder));
+
+            var first = result.Images.First();
+            Assert.Equal(firstImage.Id, first.Id);
+            Assert.Equal(firstImage.Url, first.Url);
+        }
+
+        // ---------- GetListingsAsync ----------
+
+        [Fact]
+        public async Task GetListingsAsync_ListingsFound_MapsToSummaries()
+        {
+            var listing = CreateListing(Guid.NewGuid());
+            listing.Status = ListingValues.Sold;
+            listing.CreatedAt = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            var pagination = new PaginationRequestDto { Page = 1, PageSize = 10 };
+            var filter = new ListingFilterRequestDto();
+
+            _mockRepo.Setup(l => l.GetListingsAsync(filter, pagination))
+                .ReturnsAsync(new PagedResult<Listing> { Items = [listing], TotalCount = 1 });
+
+            var result = await _listingService.GetListingsAsync(pagination, filter);
+
+            var summary = Assert.Single(result.Data);
+            Assert.Equal(listing.Id, summary.Id);
+            Assert.Equal(listing.Title, summary.Title);
+            Assert.Equal(listing.Price, summary.Price);
+            Assert.Equal(listing.Category, summary.Category);
+            Assert.Equal(listing.Condition, summary.Condition);
+            Assert.Equal(ListingValues.Sold, summary.Status);
+            Assert.Equal(listing.CreatedAt, summary.CreatedAt);
+        }
+
+        [Fact]
+        public async Task GetListingsAsync_NoListings_ReturnsEmptyPage()
+        {
+            var pagination = new PaginationRequestDto { Page = 1, PageSize = 10 };
+            var filter = new ListingFilterRequestDto();
+
+            _mockRepo.Setup(l => l.GetListingsAsync(filter, pagination))
+                .ReturnsAsync(new PagedResult<Listing> { Items = [], TotalCount = 0 });
+
+            var result = await _listingService.GetListingsAsync(pagination, filter);
+
+            Assert.Empty(result.Data);
+            Assert.Equal(0, result.TotalItems);
+            Assert.Equal(0, result.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetListingsAsync_ListingsFound_ReturnsPagingFields()
+        {
+            var pagination = new PaginationRequestDto { Page = 3, PageSize = 10 };
+            var filter = new ListingFilterRequestDto();
+
+            _mockRepo.Setup(l => l.GetListingsAsync(filter, pagination))
+                .ReturnsAsync(new PagedResult<Listing> 
+                { 
+                    Items = [CreateListing(Guid.NewGuid()), CreateListing(Guid.NewGuid()), CreateListing(Guid.NewGuid())],
+                    TotalCount = 23 
+                });
+
+            var result = await _listingService.GetListingsAsync(pagination, filter);
+
+            Assert.Equal(3, result.TotalPages);
+            Assert.Equal(23, result.TotalItems);    
+            Assert.Equal(3, result.Page);    
+            Assert.Equal(10, result.PageSize);    
         }
     }
 }
