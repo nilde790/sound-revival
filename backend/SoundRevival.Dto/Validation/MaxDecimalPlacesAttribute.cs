@@ -18,7 +18,7 @@ namespace SoundRevival.Dto.Validation
                 return true;
             }
 
-            return (number * ((decimal)Math.Pow(10, MaxDecimalPlaces))) % 1 == 0;
+            return Math.Round(number, MaxDecimalPlaces) == number;
         }
     }
 }

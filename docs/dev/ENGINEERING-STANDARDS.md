@@ -80,6 +80,13 @@ cross-field rules; data-dependent rules in the service
   The current culture is only for showing values to users. *Why*: on an 
   Italian machine `"0.01"` fails to parse (comma separator) and every 
   request on that DTO returns 500, while CI in English passes.
+- **VAL-9 (MUST) A custom validation attribute never throws**, for any 
+  value of its type: it returns valid/invalid. Avoid arithmetic that can 
+  overflow (prefer `Math.Round(x, n) == x` to `x * 10^n % 1`); its unit 
+  tests include the type's extremes (`MinValue`, `MaxValue`) and `null`. 
+  *Why*: model validation runs every attribute of a property, so an 
+  exception on user input becomes a 500 instead of a 400 
+  (`MaxDecimalPlacesAttribute` overflowed on `decimal.MaxValue`).
 
 ## 3. Error handling
 
@@ -246,7 +253,7 @@ layer. Report as `[RULE-ID] (level) what → why → concept`.
 - **Input**: constrained and bounded (VAL-1, VAL-2) · normalized 
   (VAL-3) · allow-lists incl. filters (VAL-4) · `decimal` money (VAL-5) · 
   escaped LIKE (VAL-6) · no owner/role/status from body (VAL-7) · 
-  invariant-culture parsing (VAL-8)
+  invariant-culture parsing (VAL-8) · custom attributes never throw (VAL-9)
 - **Errors & concurrency**: specific custom exceptions, mapped, nothing 
   swallowed (ERR-1, ERR-2) · DB errors translated, DB constraint as guard 
   (ERR-3, CONC-1) · safe bodies (ERR-4) · return values checked (ERR-5) · 
