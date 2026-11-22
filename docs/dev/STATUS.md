@@ -21,10 +21,10 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 | Endpoint | State |
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, validated, unit tested, checked manually (2026-11-16) |
-| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented and checked manually; unit tests missing |
+| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented, checked manually, service unit tested |
 | `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented, checked manually, service unit tested |
-| `PUT /api/listings/{id}` | ✅ implemented and checked manually; service unit tests partial (happy path missing) |
-| `POST /api/listings` | ✅ implemented and checked manually; unit tests missing |
+| `PUT /api/listings/{id}` | ✅ implemented, checked manually, service unit tested |
+| `POST /api/listings` | ✅ implemented, checked manually, service unit tested |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
 | `GET /health` | ⬜ phase 2 |
@@ -116,11 +116,13 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     longer reads `JwtSettings`.
   - 14 unit tests (10 `AuthService`, 4 `JwtTokenService`). Auth flow and 
     search checked end to end with curl on 2026-11-16.
-- 🔄 **Step 8 — `ListingService` unit tests** (in progress, 
-  `SoundRevival.Tests/Services/ListingServiceTests.cs`, 25 tests):
-  - helpers `CreateListing(ownerId)` and `CreateUpdateRequest()` (valid 
-    defaults, each test changes one field); `FakeTimeProvider` passed to 
-    the constructor;
+- 🔄 **Step 8 — unit tests** (in progress; 69 tests in total, all 
+  green, build warning-free; nothing committed since `b993a04`):
+  - ✅ **`ListingService` complete** 
+    (`SoundRevival.Tests/Services/ListingServiceTests.cs`): helpers 
+    `CreateListing(ownerId)`, `CreateUpdateRequest()`, 
+    `CreateCreateRequest()` (valid defaults, each test changes one 
+    field); `FakeTimeProvider` passed to the constructor;
   - `DeleteAsync` complete: stranger 403, owner, admin, 404, save fails 
     (`Verify(..., Times.Never/Once)` on `DeleteListing` and 
     `SaveChangesAsync`);
@@ -128,7 +130,26 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     (`[Theory]`: unknown word, wrong case, empty, spaces only), valid 
     status sets `Status` and exact `UpdatedAt`;
   - `UpdateAsync`: 403, 404, save fails, invalid category / condition 
-    (`[Theory]`). Missing: happy path.
+    (`[Theory]`), happy path (trim/price/`UpdatedAt` asserted on the 
+    tracked entity, DTO asserted on a *distinct* reloaded listing with a 
+    marker title);
+  - `CreateAsync`: invalid category / condition, save fails (no reload), 
+    reload returns null, happy path (entity captured with Moq 
+    `Callback`; `UserId` from the parameter; reload verified with the 
+    captured id);
+  - `GetByIdAsync`: 404, email hidden for anonymous / shown for any 
+    authenticated viewer, images ordered by `DisplayOrder` (input added 
+    out of order, `Select` + `Assert.Equal` on `short[]`);
+  - `GetListingsAsync`: mapping to summary, empty page, paging fields 
+    (`TotalCount` 23 ≠ 3 items, so `TotalItems` can't come from 
+    `Items.Count`).
+  - 🔄 **Validation tests** (`SoundRevival.Tests/Validation/`): 
+    `MaxDecimalPlacesAttributeTests` written (valid / invalid 
+    `TheoryData<decimal>` via `[MemberData]`, `null`). Adding 
+    `decimal.MaxValue` exposed a real bug: `number * 10^n` overflowed → 
+    `OverflowException` → 500 on user input. Fixed with 
+    `Math.Round(number, MaxDecimalPlaces) == number`; new rule **VAL-9** 
+    (custom attributes never throw).
   - `ListingService` now takes `TimeProvider` (registered as 
     `TimeProvider.System` singleton) for `UpdatedAt`; STYLE-1 and TEST-5 
     updated.
@@ -196,23 +217,31 @@ before the error handling step).
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
 6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
 7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
-8. **In progress** — unit tests (state in §3). Resume with, in order:
-   1. `UpdateAsync_ValidRequest_UpdatesListingAndReturnsDetail` 
-      (developer writes it; new: second setup on 
-      `GetListingDetailByIdAsync` for the reload, `Trim()` of fields 
-      checked on the entity, returned DTO asserted, seller email present 
-      for an authenticated user, exact `UpdatedAt`);
-   2. `CreateAsync`: invalid category/condition, save fails, reload 
-      returns null → `InvalidOperationException`, happy path (new: 
-      capture the entity passed to `AddListing` with `Callback` or 
-      `It.Is<>` to check trimmed fields and `UserId` from the parameter);
-   3. `GetByIdAsync`: 404, email shown only when `userId` is not null, 
-      images ordered by `DisplayOrder`;
-   4. `GetListingsAsync`: mapping to summary, paging fields;
-   5. `MaxDecimalPlacesAttribute` and DTO annotations 
-      (`Validator.TryValidateObject`, auth DTOs included).
-   Working split agreed: Claude writes repetitive tests, the developer 
-   writes each test that introduces a new pattern.
+8. **In progress** — unit tests (state in §3). `ListingService` done; 
+   validation tests (8.5) resume with, in order:
+   1. Finish `MaxDecimalPlacesAttributeTests`: add `decimal.MinValue` 
+      to the valid cases (VAL-9 asks for both extremes), space after 
+      the comma in `InvalidPrices`, blank lines;
+   2. **Developer writes** `SoundRevival.Tests/Validation/ValidationHelper.cs` 
+      (explained, not written yet): `public static` 
+      `List<ValidationResult> Validate(object model)` → 
+      `new ValidationContext(model)`, empty list, 
+      `Validator.TryValidateObject(..., validateAllProperties: true)` 
+      (without it only `[Required]` is checked), return the list;
+   3. `CreateListingRequestDtoTests`: developer writes the first test 
+      (new: assert the error is on the right field via `MemberNames`), 
+      Claude the rest (lengths at the boundaries, `Required`, `Price` 
+      range and decimals);
+   4. `ListingFilterRequestDtoTests` incl. `MinPrice > MaxPrice` — 
+      developer writes it (new: `IValidatableObject.Validate` runs only 
+      when all attributes pass);
+   5. Claude: `UpdateListingRequestDto` (mirrors create, C12), 
+      `UpdateListingStatusRequestDto`, `PaginationRequestDto`, 
+      `RegisterRequestDto`, `LoginRequestDto`.
+   Working split agreed: Claude writes repetitive tests and proposes 
+   that the developer write each piece that introduces something new.
+   Then commit step 8 (suggested: `fix: prevent overflow in 
+   MaxDecimalPlacesAttribute` separate from `test: …`).
 9. Then close phase 1: `sort` parameter (C11), merge 
    `feature/CRUDlistings` into `main` via PR
 
@@ -224,7 +253,7 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-17 — step 8 started: 25 `ListingService` tests 
-(39 total, all green, build warning-free); `TimeProvider` injected; T3 
-closed, A7 narrowed; product ideas added to the roadmap. Next: 
-`UpdateAsync` happy path.*
+*Last updated: 2026-11-23 — `ListingService` tests complete; 
+`MaxDecimalPlacesAttribute` tests found and fixed an overflow (→ VAL-9); 
+69 tests, all green, build warning-free; work uncommitted. Next: finish 
+the attribute tests, then `ValidationHelper` (developer).*
