@@ -158,9 +158,12 @@ Bodies are defined when the endpoints are designed (FR-4).
 | `category`, `condition` | Exact value from the allowed lists; other values → `400` |
 | `brand` | Case-insensitive partial match |
 | `minPrice`, `maxPrice` | Inclusive range; `minPrice > maxPrice` → `400` |
-| `status` | `available` (default) or `sold` |
+| `status` | `available` (default) or `sold`; other values → `400` |
 | `sort` | `newest` (default, by creation date descending), `price_asc`, `price_desc`; other values → `400`. Ties are broken by id, so pages never overlap |
 | `page`, `pageSize` | See Conventions |
+
+All values are matched exactly (case-sensitive). An omitted `status` or 
+`sort` takes its default; an empty one (`?sort=`) → `400`.
 
 Response `200`:
 ```json

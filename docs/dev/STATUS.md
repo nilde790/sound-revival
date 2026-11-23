@@ -21,7 +21,7 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 | Endpoint | State |
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | ✅ implemented, validated, unit tested, checked manually (2026-11-16) |
-| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented, checked manually, service unit tested |
+| `GET /api/listings`, `GET /api/listings/{id}` | ✅ implemented, checked manually, service unit tested; filter values and `sort` validated (2026-11-23) |
 | `DELETE /api/listings/{id}`, `PATCH /api/listings/{id}/status` | ✅ implemented, checked manually, service unit tested |
 | `PUT /api/listings/{id}` | ✅ implemented, checked manually, service unit tested |
 | `POST /api/listings` | ✅ implemented, checked manually, service unit tested |
@@ -116,9 +116,9 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     longer reads `JwtSettings`.
   - 14 unit tests (10 `AuthService`, 4 `JwtTokenService`). Auth flow and 
     search checked end to end with curl on 2026-11-16.
-- ✅ **Step 8 — unit tests** (191 tests, all green, build 
-  warning-free). Committed: overflow fix `1bdf78d`, `ListingService` 
-  tests `20dcc6a`; **validation tests uncommitted**:
+- ✅ **Step 8 — unit tests** (191 tests at the end of the step). 
+  Committed: overflow fix `1bdf78d`, `ListingService` tests `20dcc6a`, 
+  validation tests `82b425d`:
   - ✅ **`ListingService` complete** 
     (`SoundRevival.Tests/Services/ListingServiceTests.cs`): helpers 
     `CreateListing(ownerId)`, `CreateUpdateRequest()`, 
@@ -170,6 +170,30 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     `TimeProvider.System` singleton) for `UpdatedAt`; STYLE-1 and TEST-5 
     updated.
   - Test files moved from `Mock/` to `Services/` (T3 closed).
+- ✅ **Step 9 — filter values and `sort`** (C14 + C11 closed; 218 
+  tests, all green, build warning-free):
+  - `ListingFilterRequestDto` (`a65c050`): category/condition limit 
+    150 → 50 (same as create); `Status` and new `Sort` are `[Required]` 
+    with defaults (`available`, `newest`): an omitted parameter keeps the 
+    default, an empty one binds `null` → `400`. Tidy-ups done (typo, 
+    redundant `is not null`, unused `using`s).
+  - `ListingValues`: `SortNewest`, `SortPriceAsc`, `SortPriceDesc` + 
+    `Sorts` set (kept `const`, so they work as switch patterns).
+  - `ListingService.CheckFilterValues` (`31f5eac`), first line of 
+    `GetListingsAsync` (fail fast, no query on bad input): optional 
+    category/condition checked only when present, status and sort 
+    always; exact match, no trim → `BusinessRuleException` 400.
+  - `ListingRepository`: switch expression on `Sort`, every branch with 
+    `ThenBy(Id)`; unknown value → `ArgumentOutOfRangeException` (500, a 
+    service bug). A regression (`newest` ascending) was caught in review, 
+    not by tests: the repository is mocked (T4).
+  - Tests (`e69d56a`): filter DTO boundaries moved to 50/51, `Sort` 
+    length, `Required` (`null`/`""`/spaces), defaults; service: valid 
+    combinations reach the repository, invalid category/condition/
+    status/sort throw with `Verify(..., Times.Never)` on the repository.
+  - Checked against PostgreSQL (2026-11-23): `ORDER BY` in the EF log for 
+    all three sorts, prices ascending with `price_asc`, 400s without a DB 
+    query.
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
 
@@ -186,8 +210,6 @@ being touched. Remove a row when fixed.
 | ID | Issue | Where | Rule |
 |---|---|---|---|
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
-| C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |
-| C14 🟠 | List filters `category`, `condition`, `status` are not checked against the allowed values: 07-API-Design says other values → `400`, the code returns `200` with an empty list (`status` can even be `null`). Filter DTO also allows 150 chars for category/condition vs 50 on create | `ListingFilterRequestDto`, `ListingService.GetListingsAsync` | VAL / code ≠ docs |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
 | C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (fix before phase 4, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
@@ -200,7 +222,7 @@ being touched. Remove a row when fixed.
 | ID | Issue | Where | Rule |
 |---|---|---|---|
 | A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name (rename/split needs an ADR) | solution | ADR-004 |
-| A2 🟠 | Repository interface takes HTTP DTOs | `IListingRepository` | ARCH-6 |
+| A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service | `IListingRepository`, `ListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
 | A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
@@ -211,7 +233,7 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| T4 🟡 | No integration tests yet (phase 2) | `SoundRevival.Tests` | TEST-6 |
+| T4 🟡 | No integration tests yet (phase 2). The repository query (filters, `sort`, paging) is only checked manually: a regression in the `ORDER BY` passed all unit tests | `SoundRevival.Tests` | TEST-6 |
 
 **Build & tooling** (phase 2)
 
@@ -229,20 +251,18 @@ before the error handling step).
 
 1. ~~Listing DTOs + DataAnnotations~~ ✅ done
 2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done
-3. ~~`ListingService`~~ ✅ done; `sort` (C11) still open
+3. ~~`ListingService`~~ ✅ done
 4. ~~`ListingsController`~~ ✅ done and committed, C1 closed
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
 6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
 7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
-8. ~~Unit tests~~ ✅ done (§3). **Commit the validation tests** 
-   (suggested: `test: add request DTO validation tests`). Optional 
-   tidy-ups in the developer's files: unused `using`s, `errors` → 
-   `error` in the first filter test, typo "minimun" and the redundant 
-   `is not null` checks in `ListingFilterRequestDto.Validate` (lifted 
-   comparison already returns `false` when either side is `null`).
-9. Then close phase 1: filter value validation (C14) and `sort` 
-   parameter (C11) — same DTO and query, do them together; merge 
-   `feature/CRUDlistings` into `main` via PR.
+8. ~~Unit tests~~ ✅ done (§3)
+9. ~~Filter value validation (C14) and `sort` (C11)~~ ✅ done (§3)
+10. **Close phase 1**: optional `/code-review` of the branch diff, then 
+    PR `feature/CRUDlistings` → `main` (merge commit, keeps the history). 
+    Minor leftovers: typo "Unkown" in `ListingRepository`, `errors` → 
+    `error` in the first filter test. Next branches: shorter, one 
+    feature each.
 
 Working split agreed: Claude writes repetitive code/tests and proposes 
 that the developer write each piece that introduces something new.
@@ -255,7 +275,7 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-23 — step 8 complete: request DTO validation 
-tests (191 tests, all green, build warning-free), uncommitted; new debt 
-C14 (filter values not validated, code ≠ 07-API-Design). Next: commit, 
-then C14 + C11, then PR to `main`.*
+*Last updated: 2026-11-23 — step 9 complete: filter values validated 
+and `sort` implemented (C11, C14 closed; 218 tests, all green, build 
+warning-free; checked against PostgreSQL), committed in `a65c050`, 
+`31f5eac`, `e69d56a`. Next: PR `feature/CRUDlistings` → `main`.*
