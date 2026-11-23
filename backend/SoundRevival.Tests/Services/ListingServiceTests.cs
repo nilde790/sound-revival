@@ -556,7 +556,91 @@ namespace SoundRevival.Tests.Services
             Assert.Equal(3, result.TotalPages);
             Assert.Equal(23, result.TotalItems);    
             Assert.Equal(3, result.Page);    
-            Assert.Equal(10, result.PageSize);    
+            Assert.Equal(10, result.PageSize);
+        }
+
+        // Filter values: exact match against ListingValues, checked before the repository is called.
+
+        [Theory]
+        [InlineData("Guitars", "Good", ListingValues.Available, ListingValues.SortNewest)]
+        [InlineData(null, null, ListingValues.Sold, ListingValues.SortPriceAsc)]
+        [InlineData(null, "Like New", ListingValues.Available, ListingValues.SortPriceDesc)]
+        public async Task GetListingsAsync_ValidFilterValues_QueriesRepository(string? category, string? condition, string status, string sort)
+        {
+            var pagination = new PaginationRequestDto { Page = 1, PageSize = 10 };
+            var filter = new ListingFilterRequestDto
+            {
+                Category = category,
+                Condition = condition,
+                Status = status,
+                Sort = sort
+            };
+
+            _mockRepo.Setup(l => l.GetListingsAsync(filter, pagination))
+                .ReturnsAsync(new PagedResult<Listing> { Items = [], TotalCount = 0 });
+
+            await _listingService.GetListingsAsync(pagination, filter);
+
+            _mockRepo.Verify(l => l.GetListingsAsync(filter, pagination), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("Banjo")]
+        [InlineData("guitars")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetListingsAsync_InvalidCategory_ThrowsBusinessRuleException(string category)
+        {
+            var filter = new ListingFilterRequestDto { Category = category };
+
+            await AssertFilterRejected(filter);
+        }
+
+        [Theory]
+        [InlineData("Broken")]
+        [InlineData("like new")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetListingsAsync_InvalidCondition_ThrowsBusinessRuleException(string condition)
+        {
+            var filter = new ListingFilterRequestDto { Condition = condition };
+
+            await AssertFilterRejected(filter);
+        }
+
+        [Theory]
+        [InlineData("reserved")]
+        [InlineData("Available")]
+        [InlineData("")]
+        [InlineData(null)]
+        public async Task GetListingsAsync_InvalidStatus_ThrowsBusinessRuleException(string? status)
+        {
+            var filter = new ListingFilterRequestDto { Status = status! };
+
+            await AssertFilterRejected(filter);
+        }
+
+        [Theory]
+        [InlineData("oldest")]
+        [InlineData("PRICE_ASC")]
+        [InlineData("")]
+        [InlineData(null)]
+        public async Task GetListingsAsync_InvalidSort_ThrowsBusinessRuleException(string? sort)
+        {
+            var filter = new ListingFilterRequestDto { Sort = sort! };
+
+            await AssertFilterRejected(filter);
+        }
+
+        private async Task AssertFilterRejected(ListingFilterRequestDto filter)
+        {
+            var pagination = new PaginationRequestDto { Page = 1, PageSize = 10 };
+
+            await Assert.ThrowsAsync<BusinessRuleException>(() => _listingService.GetListingsAsync(pagination, filter));
+
+            _mockRepo.Verify(
+                l => l.GetListingsAsync(It.IsAny<ListingFilterRequestDto>(), It.IsAny<PaginationRequestDto>()),
+                Times.Never);
         }
     }
 }
