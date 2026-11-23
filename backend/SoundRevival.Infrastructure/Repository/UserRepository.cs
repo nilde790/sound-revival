@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SoundRevival.Core.Entities;
+using SoundRevival.Core.Exceptions;
 using SoundRevival.Core.Interfaces;
 
 namespace SoundRevival.Infrastructure.Repository
@@ -26,21 +25,22 @@ namespace SoundRevival.Infrastructure.Repository
         {
             var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            return existingUser;
-           
+            return existingUser;       
         }
 
         public async Task<bool> SaveChangesAsync()
         {
-            var result = await _context.SaveChangesAsync();
-
-            if(result != 0)
+            try
             {
-                return true;
-            }
+                var result = await _context.SaveChangesAsync();
 
-            return false;
-            
+                return result != 0;
+              
+            }
+            catch(DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                throw new UniqueConstraintViolationException("A unique constraint was violated while saving changes.", ex);
+            }
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Moq;
-using Npgsql;
+﻿using Moq;
 using SoundRevival.Core.Entities;
 using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Auth;
@@ -126,23 +124,27 @@ namespace SoundRevival.Tests.Services
         {
             _userRepo.Setup(r => r.FindUserByEmail("race@gmail.com")).ReturnsAsync((User?)null);
             _userRepo.Setup(r => r.SaveChangesAsync())
-                .ThrowsAsync(new DbUpdateException("save failed",
-                    new PostgresException("duplicate key", "ERROR", "ERROR", PostgresErrorCodes.UniqueViolation)));
+                .ThrowsAsync(new UniqueConstraintViolationException("save failed",
+                    new Exception()));
 
-            await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
                 _authService.RegisterAsync(new RegisterRequestDto { Email = "race@gmail.com", Password = "x" }));
+
+            Assert.Equal("Email already registered", ex.Message);
         }
 
         [Fact]
-        public async Task RegisterAsync_OtherDatabaseError_IsNotTranslated()
+        public async Task RegisterAsync_OtherSaveError_IsNotTranslated()
         {
             _userRepo.Setup(r => r.FindUserByEmail("fk@gmail.com")).ReturnsAsync((User?)null);
             _userRepo.Setup(r => r.SaveChangesAsync())
-                .ThrowsAsync(new DbUpdateException("save failed",
-                    new PostgresException("fk violation", "ERROR", "ERROR", PostgresErrorCodes.ForeignKeyViolation)));
+                .ThrowsAsync(new InvalidOperationException("database unavailable"));
 
-            await Assert.ThrowsAsync<DbUpdateException>(() =>
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _authService.RegisterAsync(new RegisterRequestDto { Email = "fk@gmail.com", Password = "x" }));
+
+            Assert.Equal("database unavailable", ex.Message);
+
         }
 
         [Fact]

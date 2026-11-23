@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using SoundRevival.Core.Entities;
+﻿using SoundRevival.Core.Entities;
 using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
@@ -48,7 +46,7 @@ namespace SoundRevival.Infrastructure.Services
             {
                 saved = await _repository.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            catch (UniqueConstraintViolationException)
             {
                 // Two concurrent registrations passed the check above: the DB unique index is the real guard.
                 throw new BusinessRuleException("Email already registered");
