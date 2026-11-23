@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using SoundRevival.Dto.Auth;
 
-namespace SoundRevival.Repository.Interfaces
+namespace SoundRevival.Infrastructure.Interfaces
 {
     public interface IAuthService
     {

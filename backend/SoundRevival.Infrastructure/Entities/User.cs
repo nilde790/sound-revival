@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace SoundRevival.Repository.Entities
+namespace SoundRevival.Infrastructure.Entities
 {
     public class User
     {

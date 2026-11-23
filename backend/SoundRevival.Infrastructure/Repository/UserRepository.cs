@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using SoundRevival.Repository.Entities;
-using SoundRevival.Repository.Interfaces;
+using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Infrastructure.Interfaces;
 
-namespace SoundRevival.Repository.Repository
+namespace SoundRevival.Infrastructure.Repository
 {
     public class UserRepository : IUserRepository
     {

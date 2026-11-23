@@ -3,11 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SoundRevival.Repository.Entities;
-using SoundRevival.Repository.Interfaces;
-using SoundRevival.Repository.Settings;
+using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Infrastructure.Settings;
 
-namespace SoundRevival.Repository.Services
+namespace SoundRevival.Infrastructure.Services
 {
     public class JwtTokenService : ITokenService
     {

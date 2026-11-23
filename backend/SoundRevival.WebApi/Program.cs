@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SoundRevival.Repository;
-using SoundRevival.Repository.Exceptions;
-using SoundRevival.Repository.Interfaces;
-using SoundRevival.Repository.Repository;
-using SoundRevival.Repository.Services;
-using SoundRevival.Repository.Settings;
+using SoundRevival.Infrastructure;
+using SoundRevival.Infrastructure.Exceptions;
+using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Infrastructure.Repository;
+using SoundRevival.Infrastructure.Services;
+using SoundRevival.Infrastructure.Settings;
 using SoundRevival.WebApi.ExceptionHandling;
 using System.Text;
 

@@ -1,11 +1,11 @@
 ﻿using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Listings;
-using SoundRevival.Repository.Entities;
+using SoundRevival.Infrastructure.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SoundRevival.Repository.Interfaces
+namespace SoundRevival.Infrastructure.Interfaces
 {
     public interface IListingRepository
     {

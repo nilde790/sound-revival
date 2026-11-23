@@ -2,11 +2,11 @@
 using Npgsql;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
-using SoundRevival.Repository.Entities;
-using SoundRevival.Repository.Exceptions;
-using SoundRevival.Repository.Interfaces;
+using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Infrastructure.Exceptions;
+using SoundRevival.Infrastructure.Interfaces;
 
-namespace SoundRevival.Repository.Services
+namespace SoundRevival.Infrastructure.Services
 {
     public class AuthService : IAuthService
     {

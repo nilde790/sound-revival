@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SoundRevival.Dto.Auth;
-using SoundRevival.Repository.Interfaces;
+using SoundRevival.Infrastructure.Interfaces;
 
 namespace SoundRevival.WebApi.Controllers
 {

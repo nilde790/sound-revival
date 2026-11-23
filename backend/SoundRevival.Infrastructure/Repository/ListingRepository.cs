@@ -2,10 +2,10 @@
 using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
-using SoundRevival.Repository.Entities;
-using SoundRevival.Repository.Interfaces;
+using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Infrastructure.Interfaces;
 
-namespace SoundRevival.Repository.Repository
+namespace SoundRevival.Infrastructure.Repository
 {
     public class ListingRepository : IListingRepository
     {

@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SoundRevival.Repository;
+using SoundRevival.Infrastructure;
 
 #nullable disable
 
-namespace SoundRevival.Repository.Migrations
+namespace SoundRevival.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260713175710_InitialCreate")]

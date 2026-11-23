@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using SoundRevival.Repository.Entities;
+using SoundRevival.Infrastructure.Entities;
 
-namespace SoundRevival.Repository
+namespace SoundRevival.Infrastructure
 
 {
     public class AppDbContext : DbContext

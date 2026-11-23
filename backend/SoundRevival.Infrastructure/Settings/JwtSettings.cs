@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SoundRevival.Repository.Settings
+namespace SoundRevival.Infrastructure.Settings
 {
     public class JwtSettings
     {

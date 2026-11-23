@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SoundRevival.Repository.Migrations
+namespace SoundRevival.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

@@ -1,4 +1,4 @@
-namespace SoundRevival.Repository.Exceptions
+namespace SoundRevival.Infrastructure.Exceptions
 {
     public class InvalidCredentialsException : AppException
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Text;
 
-namespace SoundRevival.Repository.Exceptions
+namespace SoundRevival.Infrastructure.Exceptions
 {
     public abstract class AppException : Exception
     {

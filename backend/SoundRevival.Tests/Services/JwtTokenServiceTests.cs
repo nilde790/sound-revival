@@ -4,9 +4,9 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Dto.Constants;
-using SoundRevival.Repository.Entities;
-using SoundRevival.Repository.Services;
-using SoundRevival.Repository.Settings;
+using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Infrastructure.Services;
+using SoundRevival.Infrastructure.Settings;
 
 namespace SoundRevival.Tests.Services
 {
