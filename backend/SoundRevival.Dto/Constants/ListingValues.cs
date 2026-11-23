@@ -9,5 +9,10 @@ namespace SoundRevival.Dto.Constants
         public const string Available = "available";
         public const string Sold = "sold";
 
+        public static readonly IReadOnlySet<string> Sorts = new HashSet<string> { SortNewest, SortPriceAsc, SortPriceDesc };
+
+        public const string SortNewest = "newest";
+        public const string SortPriceAsc = "price_asc";
+        public const string SortPriceDesc = "price_desc";
     }
 }

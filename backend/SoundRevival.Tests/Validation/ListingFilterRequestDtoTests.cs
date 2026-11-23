@@ -1,7 +1,5 @@
-﻿using SoundRevival.Dto.Listings;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SoundRevival.Dto.Constants;
+using SoundRevival.Dto.Listings;
 
 namespace SoundRevival.Tests.Validation
 {
@@ -102,10 +100,11 @@ namespace SoundRevival.Tests.Validation
         {
             var request = new ListingFilterRequestDto
             {
-                Category = new string('a', 150),
-                Condition = new string('a', 150),
+                Category = new string('a', 50),
+                Condition = new string('a', 50),
                 Search = new string('a', 100),
-                Status = new string('a', 50)
+                Status = new string('a', 50),
+                Sort = new string('a', 20)
             };
 
             var results = ValidationHelper.Validate(request);
@@ -116,7 +115,7 @@ namespace SoundRevival.Tests.Validation
         [Fact]
         public void Validate_CategoryTooLong_ReturnsErrorOnCategory()
         {
-            var request = new ListingFilterRequestDto { Category = new string('a', 151) };
+            var request = new ListingFilterRequestDto { Category = new string('a', 51) };
 
             var results = ValidationHelper.Validate(request);
 
@@ -127,7 +126,7 @@ namespace SoundRevival.Tests.Validation
         [Fact]
         public void Validate_ConditionTooLong_ReturnsErrorOnCondition()
         {
-            var request = new ListingFilterRequestDto { Condition = new string('a', 151) };
+            var request = new ListingFilterRequestDto { Condition = new string('a', 51) };
 
             var results = ValidationHelper.Validate(request);
 
@@ -155,6 +154,57 @@ namespace SoundRevival.Tests.Validation
 
             var error = Assert.Single(results);
             Assert.Contains(nameof(ListingFilterRequestDto.Status), error.MemberNames);
+        }
+
+        [Fact]
+        public void Validate_SortTooLong_ReturnsErrorOnSort()
+        {
+            var request = new ListingFilterRequestDto { Sort = new string('a', 21) };
+
+            var results = ValidationHelper.Validate(request);
+
+            var error = Assert.Single(results);
+            Assert.Contains(nameof(ListingFilterRequestDto.Sort), error.MemberNames);
+        }
+
+        // ---------- Required with defaults ----------
+
+        // A missing query parameter keeps the initializer; an empty one binds null.
+        [Fact]
+        public void New_NoValuesSet_UsesDefaultStatusAndSort()
+        {
+            var request = new ListingFilterRequestDto();
+
+            Assert.Equal(ListingValues.Available, request.Status);
+            Assert.Equal(ListingValues.SortNewest, request.Sort);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Validate_MissingStatus_ReturnsErrorOnStatus(string? status)
+        {
+            var request = new ListingFilterRequestDto { Status = status! };
+
+            var results = ValidationHelper.Validate(request);
+
+            var error = Assert.Single(results);
+            Assert.Contains(nameof(ListingFilterRequestDto.Status), error.MemberNames);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Validate_MissingSort_ReturnsErrorOnSort(string? sort)
+        {
+            var request = new ListingFilterRequestDto { Sort = sort! };
+
+            var results = ValidationHelper.Validate(request);
+
+            var error = Assert.Single(results);
+            Assert.Contains(nameof(ListingFilterRequestDto.Sort), error.MemberNames);
         }
     }
 }
