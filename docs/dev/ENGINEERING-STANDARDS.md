@@ -61,7 +61,8 @@ cross-field rules; data-dependent rules in the service
   `1 ≤ pageSize ≤ 100`, max collection sizes, max text lengths. *Why*: 
   unbounded input is the cheapest denial of service.
 - **VAL-3 (MUST) Normalize before comparing or storing**: trim strings; 
-  emails compared case-insensitively (debt C2).
+  emails compared case-insensitively (example: `Trim().ToLowerInvariant()` 
+  on the email in `AuthService`).
 - **VAL-4 (MUST)** Enum-like values checked against the allow-lists in 
   04-DomainModel.md — query filters included.
 - **VAL-5 (MUST) Money is `decimal`**, positive, ≤ 2 decimals, bounded. 
@@ -114,7 +115,8 @@ Mechanism: custom exceptions → one global `IExceptionHandler` → RFC 9457
 
 - **CONC-1 (MUST) Check-then-act is not atomic**: a DB unique constraint 
   is the real guard, and its violation is handled (ERR-3). The check in 
-  code only gives a nicer message for the common case (debt C3).
+  code only gives a nicer message for the common case (example: 
+  duplicate email at registration).
 - **CONC-2 (SHOULD → MUST with v2 payments)** Detect concurrent updates 
   to important state with optimistic concurrency (PostgreSQL `xmin` as 
   concurrency token → `DbUpdateConcurrencyException`).
@@ -169,7 +171,8 @@ See [`../05-Database.md`](../05-Database.md).
 - **CFG-1 (SHOULD) Options pattern**: bind sections to classes, 
   `ValidateDataAnnotations().ValidateOnStart()`, inject `IOptions<T>`. 
   *Why*: missing settings fail at startup with a clear message; tests use 
-  `Options.Create(...)` instead of mocking `IConfiguration` (C7, T2).
+  `Options.Create(...)` instead of mocking `IConfiguration` (example: 
+  `JwtSettings`).
 - **CFG-2 (SHOULD)** Environment differences live in configuration, 
   never in `IsDevelopment()` checks in business code.
 
@@ -199,7 +202,7 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 
 - **TEST-1 (MUST) Every business rule has a test that fails if the rule 
   is removed**: assert outcomes (`Verify`, `It.Is<…>`), not just 
-  `NotNull` (debt T1).
+  `NotNull`.
 - **TEST-2 (MUST)** Every `throw` in a service has a test.
 - **TEST-3 (MUST)** One scenario per test, `Method_Scenario_ExpectedResult` 
   naming the behaviour (`ThrowsForbiddenException`), Arrange-Act-Assert.

@@ -65,8 +65,7 @@ values**. Manual checks: `SoundRevival.WebApi.http` / Postman; DB: DBeaver.
   ARCH rules).
 - Schema changes: Code First migrations only; never edit an applied one.
 - Errors: custom exceptions + global `IExceptionHandler` → 
-  `ProblemDetails`; no `try/catch` in controllers (ADR-009; auth not 
-  migrated yet, debt E1).
+  `ProblemDetails`; no `try/catch` in controllers (ADR-009).
 - Validation: DataAnnotations on request DTOs; business rules in 
   services (ADR-010).
 - Current user id: `User.FindFirstValue(ClaimTypes.NameIdentifier)` 

@@ -42,7 +42,8 @@ to 5 images.
 
 **Attributes:**
 - id
-- url (Cloudinary URL — see 05-Database.md → Image storage strategy)
+- url (URL returned by the external image storage — see 05-Database.md 
+  → Image storage strategy)
 - displayOrder (to control image order in the gallery)
 
 ## Relationships

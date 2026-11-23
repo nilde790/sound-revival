@@ -14,8 +14,17 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (not started) · branch `main`, no 
-feature branch open
+**Phase 2 — Delivery pipeline** (planned, no code yet) · branch 
+`docs/coherence-fixes` (documentation only, committed, PR to open)
+
+On 2026-11-23 the whole project was checked for coherence (docs vs. 
+code, phase vs. phase, current practice). Outcome: docs fixed, phase 2 
+plan revised, two decisions taken before starting: 
+[ADR-011](../adr/ADR-011-Core-Infrastructure-Split.md) (Core + 
+Infrastructure split, separate integration test project) and 
+[ADR-012](../adr/ADR-012-Browser-Token-Storage.md) (access token in 
+memory, refresh token in an `HttpOnly` cookie; token refresh moves to 
+phase 3).
 
 Phase 1 — Backend foundations ✅ closed on 2026-11-23: 
 [PR #3](https://github.com/nilde790/sound-revival/pull/3) merged into 
@@ -32,7 +41,8 @@ Phase 1 — Backend foundations ✅ closed on 2026-11-23:
 | `POST /api/listings` | ✅ implemented, checked manually, service unit tested |
 | `GET/PUT /api/users/me` | ⬜ phase 3 |
 | `POST/DELETE /api/listings/{id}/images…` | ⬜ phase 3 |
-| `GET /health` | ⬜ phase 2 |
+| `GET /health/live`, `GET /health/ready` | ⬜ phase 2 |
+| `POST /api/auth/refresh`, `POST /api/auth/logout` | ⬜ phase 3 (ADR-012) |
 
 ## 3. What's built
 
@@ -202,8 +212,20 @@ warning-free.
   - Checked against PostgreSQL (2026-11-23): `ORDER BY` in the EF log for 
     all three sorts, prices ascending with `price_asc`, 400s without a DB 
     query.
+- ✅ **Step 10 — branch review** (2026-11-23, `d01fc13`): typos fixed; 
+  same-status PATCH is now a real no-op (early return after ownership 
+  and status checks, nothing saved, `UpdatedAt` untouched; 2 tests). 
+  Email normalization vs pre-existing mixed-case rows: local DB 
+  checked, none; the S1 migration must also lowercase stored emails 
+  (noted in S1). A7 and A9 left as debt.
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
+
+**Baseline before phase 2** (measured 2026-11-23): clean build with 0 
+warnings, 220/220 tests green, no vulnerable packages (transitive 
+included). Not yet clean: 66 whitespace violations from 
+`dotnet format --verify-no-changes` (B3), SDK not pinned and patch 
+versions behind (B6).
 
 ## 4. Technical debt
 
@@ -220,7 +242,8 @@ being touched. Remove a row when fixed.
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email (include a data update `lower(trim(email))`, after checking for collisions, so accounts stored before normalization can still log in), `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
-| C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (fix before phase 4, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
+| C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (phase 3, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
+| C15 🟡 | Enum-like input normalized inconsistently: `status` in the PATCH body is trimmed (`" sold "` accepted), while query filters must match exactly. One rule for body and query (phase 3 housekeeping) | `ListingService` | VAL-3 |
 | C8 🟡 | Unknown-email login skips `BCrypt.Verify`: timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
 | C9 🟡 | No CORS policy | `Program.cs` | SEC-8 |
 | C10 🟡 | `UseHttpsRedirection` with an HTTP-only launch profile | `Program.cs` | CFG-2 |
@@ -229,13 +252,14 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name (rename/split needs an ADR) | solution | ADR-004 |
-| A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service | `IListingRepository`, `ListingRepository` | ARCH-6 |
+| A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name, and services can reference EF Core/Npgsql (`AuthService` does). Decided: split into Core + Infrastructure, first item of phase 2 | solution | ADR-011 |
+| A10 🟡 | `AuthService` calls the BCrypt library directly (open point of ADR-011: keep it, or `IPasswordHasher` in Core); it also sets `CreatedAt` with `DateTime.UtcNow` (A7). Decide during the A1 refactor | `AuthService` | ARCH-5 |
+| A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service (phase 3 housekeeping; the query type belongs in Core, ADR-011) | `IListingRepository`, `ListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
-| A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
-| A9 🟡 | `AppException` responses (404/403/400) lack the `type` and `traceId` fields the framework adds to the 500: two slightly different `ProblemDetails` shapes. Option: write them with `IProblemDetailsService` | `GlobalExceptionHandler` | ERR-4 |
-| A8 🟡 | No `CancellationToken` propagation | repositories, services, controllers | ASYNC-2 |
+| A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable (phase 3 housekeeping) | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
+| A9 🟡 | `AppException` responses (404/403/400) lack the `type` and `traceId` fields the framework adds to the 500: two slightly different `ProblemDetails` shapes. Option: write them with `IProblemDetailsService` (phase 3 housekeeping) | `GlobalExceptionHandler` | ERR-4 |
+| A8 🟡 | No `CancellationToken` propagation (phase 3 housekeeping) | repositories, services, controllers | ASYNC-2 |
 
 **Tests**
 
@@ -249,30 +273,30 @@ being touched. Remove a row when fixed.
 |---|---|---|
 | B1 🟡 | Warning-free not enforced (`TreatWarningsAsErrors`) | STYLE-2 |
 | B2 🟡 | No Central Package Management; versions drift (`JwtBearer` 10.0.10 vs 10.0.9) | STYLE-2 |
-| B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s | STYLE-3 |
+| B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s; 66 whitespace violations today | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-
-- ✅ **Step 10 — branch review** (2026-11-23, `d01fc13`): typos fixed; 
-  same-status PATCH is now a real no-op (early return after ownership 
-  and status checks, nothing saved, `UpdatedAt` untouched; 2 tests). 
-  Email normalization vs pre-existing mixed-case rows: local DB 
-  checked, none; the S1 migration must also lowercase stored emails 
-  (noted in S1). A7 and A9 left as debt.
+| B6 🟡 | No `global.json`: the SDK is not pinned (the dev machine has only SDK 11.0.100, CI would pick its own); patch versions behind (EF Core 10.0.9 → 10.0.15, JwtBearer 10.0.10 → 10.0.15, Microsoft.OpenApi 2.7.5 → 2.13.1, Npgsql 10.0.3 → 10.0.4) | STYLE-2, SEC-7 |
+| T5 🟡 | Test stack on xUnit v2 + VSTest + coverlet; .NET 11 templates default to xUnit v3 + Microsoft.Testing.Platform | — |
 
 ## 5. Next steps (phase 2)
 
-Phase 1 is done: steps 1–10 in §3, merged via PR #3. Phase 2 has not 
-started; its items are in 
-[09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton).
+Phase 1 is done: steps 1–10 in §3, merged via PR #3. Phase 2 is 
+planned (items in branch order in 
+[09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton)); 
+no phase 2 code yet.
 
-1. **Study first**: [LEARNING-PATH.md → Phase 2](LEARNING-PATH.md#phase-2--delivery-pipeline).
-2. **At phase start**: write `14-DevOps.md` and the ADR on the 
-   deployment platform (roadmap).
-3. **Plan the first branch together**: suggested order is build quality 
-   (B1–B3) → CI on GitHub Actions + branch protection → integration 
-   tests (T4), so every later PR is checked automatically.
-4. Optional, any time: housekeeping branches for A7 / A9 (small, one 
-   each).
+1. **Close the docs branch**: review, commit and merge 
+   `docs/coherence-fixes` (coherence fixes, ADR-011, ADR-012, revised 
+   roadmap and learning path).
+2. **First item — Core + Infrastructure split** (ADR-011, A1), on 
+   `feature/core-infrastructure`. Study 
+   [LEARNING-PATH 2.0](LEARNING-PATH.md#20-dependency-inversion-core-and-infrastructure-) 
+   first. Plan the step together; decide A10 (BCrypt) there. Safety 
+   net: 220 tests green before and after every move.
+3. Then build quality (B1–B3, B6) → test platform (T5) → CI → 
+   integration tests (T4), so every later PR is checked automatically.
+4. `14-DevOps.md` and the deployment ADR come right before the deploy 
+   item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
 every few days, merge commit. Delete `feature/CRUDlistings` on GitHub 
@@ -286,6 +310,7 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-23 — phase 1 closed: PR #3 merged into `main` 
-(`6cf99d7`; 220 tests, all green, build warning-free). Next: study and 
-plan phase 2.*
+*Last updated: 2026-11-23 — project-wide coherence check; docs fixed; 
+ADR-011 and ADR-012 accepted; phase 2 plan revised (all on 
+`docs/coherence-fixes`, committed, PR to open). Next: merge the docs 
+branch, then the Core + Infrastructure split.*

@@ -36,6 +36,11 @@ secure my account on a shared device.
 *Covers*: FR-3
 - Given I am logged in, when I log out, then the frontend discards my 
   token and protected pages redirect me to the login page.
+- Given I logged out, when the old refresh token is presented again, 
+  then the refresh fails with `401` (revoked on the server, ADR-012, 
+  phase 3).
+- Given I am logged in and reload the page, then I stay logged in (the 
+  frontend gets a new access token through the refresh cookie).
 
 **US-4** — As a **registered user**, I want to view and edit my profile, 
 so that my information stays up to date. 

@@ -10,11 +10,12 @@ New requirements get the next free id.
 ### Authentication & User Management
 - **FR-1**: A user must be able to register with email and password
 - **FR-2**: A user must be able to log in with email and password
-- **FR-3**: A user must be able to log out. With stateless JWT 
-  authentication (ADR-003) logout happens **on the client**, which 
-  discards the token. The server does not revoke tokens in v1: a token 
-  stays valid until it expires (`Jwt:ExpiryMinutes`). Server-side 
-  revocation comes with token refresh in v2
+- **FR-3**: A user must be able to log out. The frontend discards its 
+  access token and calls `POST /api/auth/logout`, which revokes the 
+  refresh token on the server (ADR-012, phase 3). An access token 
+  already issued stays valid until it expires, so its lifetime is short 
+  (`Jwt:ExpiryMinutes`). Until phase 3, logout only discards the token 
+  on the client
 - **FR-4**: A user must be able to view and edit their own profile 
   (display name). The email is both the login identity and the contact 
   address (see 04-DomainModel.md); whether it can be changed is decided 
@@ -87,7 +88,8 @@ check, a measurement or a review).
 - **NFR-12**: All client input (body, query, route) must be validated and 
   bounded before reaching business logic; invalid input returns `400`
 - **NFR-13**: Cross-origin requests must be allowed only from the 
-  configured frontend origin(s) (CORS)
+  configured frontend origin(s) (CORS); credentials (the refresh token 
+  cookie, ADR-012) only for those origins
 
 ### Performance
 - **NFR-4**: With **1,000 seeded listings**, `GET /api/listings` (default 
@@ -112,8 +114,10 @@ check, a measurement or a review).
 
 ### Operability
 - **NFR-15**: The backend must write structured logs (no secrets or 
-  personal data, see NFR-3) and expose a health endpoint that reports 
-  whether the API and its database are reachable
+  personal data, see NFR-3) and expose two unauthenticated health 
+  endpoints: **liveness** (the process answers; the platform restarts it 
+  otherwise) and **readiness** (the API can reach its database; the 
+  platform sends no traffic otherwise)
 
 ### Deployment
 - **NFR-8**: The application must be deployable via Docker 
@@ -130,10 +134,10 @@ check, a measurement or a review).
 
 ## Scope
 
-The requirements above are v1. v2 (in-app messaging, simulated payments, 
-admin moderation dashboard, dynamic categories, token refresh) is 
-committed scope after v1; its requirements will be added here when each 
-feature is started. Real payments, real shipping and multi-language 
+The requirements above are v1 (token refresh joined v1 with ADR-012). 
+v2 (in-app messaging, simulated payments, admin moderation dashboard, 
+dynamic categories) is committed scope after v1; its requirements will 
+be added here when each feature is started. Real payments, real shipping and multi-language 
 remain out of scope. See `01-Vision.md` and `09-Roadmap.md`.
 
 Exploratory product ideas (trade listings, multi-party trade matching, 

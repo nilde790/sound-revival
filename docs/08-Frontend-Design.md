@@ -72,21 +72,34 @@ if the user isn't logged in.
 - **Server state** (data fetched from the API: listings, user profile): 
   managed via **React Query**, handling caching, loading/error states, 
   and automatic refetching after mutations (e.g. after creating a listing)
-- **Auth state** (current user, token): managed via **React Context** 
-  (`AuthContext`), providing `useAuth()` across the app — kept separate 
-  from React Query since it's app-wide session state, not server data 
-  to be cached/refetched
+- **Auth state** (current user, access token): managed via **React 
+  Context** (`AuthContext`), providing `useAuth()` across the app — kept 
+  separate from React Query since it's app-wide session state, not 
+  server data to be cached/refetched. The access token lives **in memory 
+  only**, never in `localStorage` 
+  ([ADR-012](adr/ADR-012-Browser-Token-Storage.md)). On app start 
+  the frontend calls `POST /api/auth/refresh`: the browser sends the 
+  `HttpOnly` refresh cookie, so a reload keeps the user logged in
 - **Local UI state** (form inputs, filters before submission, modals): 
   handled with plain `useState` inside individual components
 
 ## API communication
 
-- **Axios** instance configured once in `shared/lib/axios.ts`, with an 
-  interceptor that automatically attaches the JWT token (from 
-  `AuthContext`) to every outgoing request's `Authorization` header
+- **Axios** instance configured once in `shared/lib/axios.ts`, with:
+  - a request interceptor that attaches the access token (from 
+    `AuthContext`) to every outgoing request's `Authorization` header;
+  - a response interceptor: on `401` it calls `POST /api/auth/refresh` 
+    once and retries the request; if the refresh fails, the user is 
+    logged out and sent to `/login`. Concurrent `401`s share one refresh 
+    call
+- In development the Vite dev server proxies `/api` to the backend, so 
+  the refresh cookie works on one origin, like in production (same site, 
+  ADR-012)
 - Each feature's `api/` folder contains typed functions wrapping Axios 
   calls (e.g. `getListings()`, `createListing()`), consumed by that 
-  feature's React Query hooks
+  feature's React Query hooks. Request and response types are generated 
+  from the backend's OpenAPI document, so the contract in 
+  07-API-Design.md can't silently drift from the frontend
 
 ## Key components (high level)
 
