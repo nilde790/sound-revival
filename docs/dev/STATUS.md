@@ -14,7 +14,12 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 1 — Backend foundations** · branch `feature/CRUDlistings`
+**Phase 2 — Delivery pipeline** (not started) · branch `main`, no 
+feature branch open
+
+Phase 1 — Backend foundations ✅ closed on 2026-11-23: 
+[PR #3](https://github.com/nilde790/sound-revival/pull/3) merged into 
+`main` (merge commit `6cf99d7`).
 
 ## 2. Endpoints
 
@@ -31,13 +36,16 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 3. What's built
 
-**On `main`**: entities `User`/`Listing`/`Image`, `AppDbContext`, 
+Everything below is on `main`. 220 unit tests, all green; build 
+warning-free.
+
+**Phase 0** (PR #1): entities `User`/`Listing`/`Image`, `AppDbContext`, 
 `InitialCreate` migration; JWT register/login with BCrypt; 
-`UserRepository`; 5 unit tests on `AuthService`. Build warning-free 
-thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903, 
+`UserRepository`. Build warning-free thanks to two documented pins 
+(`Microsoft.OpenApi` 2.7.5 for NU1903, 
 `Microsoft.EntityFrameworkCore.Relational` 10.0.9 for MSB3277).
 
-**On `feature/CRUDlistings`**:
+**Phase 1** (PR #3, from `feature/CRUDlistings`), step by step:
 - ✅ **Step 1 — repository** (`6a7905f`): `IListingRepository` / 
   `ListingRepository` (get by id tracked, filtered + paginated list 
   ordered newest first with id tiebreaker, add, remove, save); 
@@ -244,28 +252,31 @@ being touched. Remove a row when fixed.
 | B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
 
-## 5. Next steps (phase 1, in order)
+- ✅ **Step 10 — branch review** (2026-11-23, `d01fc13`): typos fixed; 
+  same-status PATCH is now a real no-op (early return after ownership 
+  and status checks, nothing saved, `UpdatedAt` untouched; 2 tests). 
+  Email normalization vs pre-existing mixed-case rows: local DB 
+  checked, none; the S1 migration must also lowercase stored emails 
+  (noted in S1). A7 and A9 left as debt.
 
-Study first: [LEARNING-PATH.md](LEARNING-PATH.md) → Phase 1 (1.2, 1.3 
-before the error handling step).
+## 5. Next steps (phase 2)
 
-1. ~~Listing DTOs + DataAnnotations~~ ✅ done
-2. ~~D1 + error handling infrastructure (ADR-009)~~ ✅ done
-3. ~~`ListingService`~~ ✅ done
-4. ~~`ListingsController`~~ ✅ done and committed, C1 closed
-5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
-6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
-7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
-8. ~~Unit tests~~ ✅ done (§3)
-9. ~~Filter value validation (C14) and `sort` (C11)~~ ✅ done (§3)
-10. ~~Branch review~~ ✅ done (2026-11-23): typos fixed; same-status 
-    PATCH is now a real no-op (early return after ownership and status 
-    checks, nothing saved, `UpdatedAt` untouched; 2 tests, 220 total). 
-    Email normalization vs pre-existing mixed-case rows: local DB 
-    checked, none; the S1 migration must also lowercase stored emails. 
-    A7 and A9 left as debt for a dedicated branch.
-11. **Close phase 1**: PR `feature/CRUDlistings` → `main` (merge 
-    commit, keeps the history). Next branches: shorter, one feature each.
+Phase 1 is done: steps 1–10 in §3, merged via PR #3. Phase 2 has not 
+started; its items are in 
+[09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton).
+
+1. **Study first**: [LEARNING-PATH.md → Phase 2](LEARNING-PATH.md#phase-2--delivery-pipeline).
+2. **At phase start**: write `14-DevOps.md` and the ADR on the 
+   deployment platform (roadmap).
+3. **Plan the first branch together**: suggested order is build quality 
+   (B1–B3) → CI on GitHub Actions + branch protection → integration 
+   tests (T4), so every later PR is checked automatically.
+4. Optional, any time: housekeeping branches for A7 / A9 (small, one 
+   each).
+
+Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
+every few days, merge commit. Delete `feature/CRUDlistings` on GitHub 
+(still on `origin`) and locally once no longer needed.
 
 Working split agreed: Claude writes repetitive code/tests and proposes 
 that the developer write each piece that introduces something new.
@@ -274,11 +285,7 @@ Working mode: `/learn-code` — the developer writes the code, Claude
 explains, gives hints on other examples and reviews each file against the 
 standards.
 
-Then phase 2 (CI, integration tests, Docker, backend deploy) — see the 
-roadmap.
-
 ---
-*Last updated: 2026-11-23 — step 9 complete: filter values validated 
-and `sort` implemented (C11, C14 closed; 218 tests, all green, build 
-warning-free; checked against PostgreSQL), committed in `a65c050`, 
-`31f5eac`, `e69d56a`. Next: PR `feature/CRUDlistings` → `main`.*
+*Last updated: 2026-11-23 — phase 1 closed: PR #3 merged into `main` 
+(`6cf99d7`; 220 tests, all green, build warning-free). Next: study and 
+plan phase 2.*
