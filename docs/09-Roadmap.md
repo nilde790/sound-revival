@@ -36,7 +36,8 @@ BCrypt, first unit tests. Merged into `main` ([PR #1](https://github.com/nilde79
 
 ### Phase 1 — Backend foundations
 
-**Status**: 🚧 current phase.
+**Status**: ✅ done (2026-11-23). Merged into `main` 
+([PR #3](https://github.com/nilde790/sound-revival/pull/3)).
 
 **Goal**: complete listings CRUD with the quality patterns every later 
 feature will reuse: validation, error handling, authorization, tests.
@@ -52,9 +53,9 @@ feature will reuse: validation, error handling, authorization, tests.
 | ✅ | Migrate auth to the new error pattern; validate auth DTOs | E1, C4 |
 | ✅ | `ListingService`: ownership/admin checks, allowed values, status rules | FR-6..10, FR-18 |
 | ✅ | `ListingsController` (CRUD + `PATCH /status`) | 07-API-Design |
-| 🚧 | Fix correctness debt in touched code: bounded pagination, email normalization, duplicate-email race, LIKE escaping, default sort newest (`sort` parameter still open) | C1, C2, C3, C6, C11 |
+| ✅ | Fix correctness debt in touched code: bounded pagination, email normalization, duplicate-email race, LIKE escaping, sort (`newest` default, `price_asc`, `price_desc`), filter values validated | C1, C2, C3, C6, C11, C14 |
 | ✅ | Options pattern for JWT settings; token generation behind its own interface | C7, A3 |
-| ⬜ | Unit tests for `ListingService`; fix `AuthServiceTests` | T1, T2, T3 |
+| ✅ | Unit tests for `ListingService`, `AuthService`, `JwtTokenService` and every request DTO (220) | T1, T2, T3 |
 
 **Done when**: every listings endpoint in 07-API-Design.md works as 
 documented (status codes and `ProblemDetails` bodies included); the 
@@ -65,6 +66,8 @@ Definition of Done holds; debts C1–C4, C6, C11, E1 and T1 are closed.
 handling 🟢 · EF Core 🟢 · authorization 🟢 · unit testing with mocks 🟢
 
 ### Phase 2 — Delivery pipeline (walking skeleton)
+
+**Status**: 🚧 current phase (not started).
 
 **Goal**: every push is built and tested automatically, and the backend 
 runs online with its database and interactive API docs.
