@@ -211,7 +211,7 @@ being touched. Remove a row when fixed.
 |---|---|---|---|
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
-| S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
+| S1 🟠 | Schema changes pending: column limits, normalized email (include a data update `lower(trim(email))`, after checking for collisions, so accounts stored before normalization can still log in), `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
 | C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (fix before phase 4, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
 | C8 🟡 | Unknown-email login skips `BCrypt.Verify`: timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
 | C9 🟡 | No CORS policy | `Program.cs` | SEC-8 |
@@ -258,11 +258,14 @@ before the error handling step).
 7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
 8. ~~Unit tests~~ ✅ done (§3)
 9. ~~Filter value validation (C14) and `sort` (C11)~~ ✅ done (§3)
-10. **Close phase 1**: optional `/code-review` of the branch diff, then 
-    PR `feature/CRUDlistings` → `main` (merge commit, keeps the history). 
-    Minor leftovers: typo "Unkown" in `ListingRepository`, `errors` → 
-    `error` in the first filter test. Next branches: shorter, one 
-    feature each.
+10. ~~Branch review~~ ✅ done (2026-11-23): typos fixed; same-status 
+    PATCH is now a real no-op (early return after ownership and status 
+    checks, nothing saved, `UpdatedAt` untouched; 2 tests, 220 total). 
+    Email normalization vs pre-existing mixed-case rows: local DB 
+    checked, none; the S1 migration must also lowercase stored emails. 
+    A7 and A9 left as debt for a dedicated branch.
+11. **Close phase 1**: PR `feature/CRUDlistings` → `main` (merge 
+    commit, keeps the history). Next branches: shorter, one feature each.
 
 Working split agreed: Claude writes repetitive code/tests and proposes 
 that the developer write each piece that introduces something new.
