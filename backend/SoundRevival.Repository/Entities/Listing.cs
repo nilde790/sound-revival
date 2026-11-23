@@ -1,7 +1,7 @@
-﻿using System;
+﻿using SoundRevival.Dto.Constants;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SoundRevival.Repository.Entities
 {
@@ -14,7 +14,7 @@ namespace SoundRevival.Repository.Entities
         public decimal Price { get; set; }
         public string Category { get; set; } = string.Empty;
         public string Condition { get; set; } = string.Empty;
-        public string Status { get; set; } = "available";
+        public string Status { get; set; } = ListingValues.Available;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

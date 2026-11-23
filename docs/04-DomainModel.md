@@ -30,6 +30,8 @@ Represents an instrument listing published by a user.
 - price
 - category (fixed enum — see Glossary)
 - condition (fixed enum — see Glossary)
+- brand (optional, free text — e.g. "Fender", "Yamaha"; not a fixed 
+  list, since instrument brands number in the thousands)
 - status (`available` | `sold`) — default: `available`
 - createdAt
 - updatedAt
@@ -40,7 +42,7 @@ to 5 images.
 
 **Attributes:**
 - id
-- url (or file path, depending on storage choice — see 06-Architecture.md)
+- url (Cloudinary URL — see 05-Database.md → Image storage strategy)
 - displayOrder (to control image order in the gallery)
 
 ## Relationships
@@ -51,9 +53,11 @@ to 5 images.
 - **Listing → Image**: one-to-many  
   A listing can have up to 5 images; each image belongs to exactly one listing.
 
-  User (1) ──────< (many) Listing (1) ──────< (many) Image
+```
+User (1) ──────< (many) Listing (1) ──────< (many) Image
+```
 
-  ## Glossary (fixed enums)
+## Glossary (fixed enums)
 
 **Category** (fixed list, not a separate entity):
 - Guitars
@@ -70,13 +74,13 @@ to 5 images.
 - Fair
 - Poor
 
-**Listing status**:
-- Available
-- Sold
+**Listing status** (stored lowercase):
+- `available` (default)
+- `sold`
 
-**User role**:
-- User (default)
-- Admin (assigned manually, not selectable at registration)
+**User role** (stored lowercase):
+- `user` (default)
+- `admin` (assigned manually, not selectable at registration)
 
 ## Notes on design choices
 
@@ -93,7 +97,14 @@ to 5 images.
   independent metadata) — this maps naturally to a one-to-many 
   relationship in a relational database.
 
-  - **A single `email` field is used** both for login and as the contact 
-  reference shown to buyers, keeping the model simpler. If needed in the 
-  future, a separate public contact field could be introduced without 
-  breaking this structure.
+- **A single `email` field is used** both for login and as the contact 
+  reference shown to buyers, keeping the model simpler. It is shown only 
+  to authenticated visitors (FR-15), and it is compared 
+  case-insensitively (stored normalized). If needed in the future, a 
+  separate public contact field could be introduced without breaking 
+  this structure.
+
+- **Brand is a free-text attribute, not an entity.** A fixed list would 
+  be impossible to maintain; a `Brand` table would only pay off with 
+  brand pages or normalized spelling ("Fender" vs "fender"), which are 
+  not in scope.
