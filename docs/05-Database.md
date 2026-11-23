@@ -15,10 +15,15 @@ storage limits), so check current terms at that time.
 ## Image storage strategy
 
 Images are **not stored in the database or on the application server**. 
-They are uploaded to **Cloudinary** (external cloud storage), which 
-returns a permanent public URL. Only this URL is persisted in the 
-`Images` table. This avoids relying on ephemeral filesystem storage, 
-which many free hosting platforms wipe on redeploy.
+They are uploaded to an **external storage service**, which returns a 
+URL. Only this URL is persisted in the `Images` table. This avoids 
+relying on ephemeral filesystem storage, which many hosting platforms 
+wipe on redeploy.
+
+The provider (e.g. Cloudinary or the deployment cloud's blob storage) is 
+**not chosen yet**: it is an ADR at the start of phase 3 (see 
+09-Roadmap.md). Deleting a listing removes its `Images` rows by cascade, 
+but not the stored files: the image feature must delete them explicitly.
 
 ## Schema
 
@@ -64,7 +69,7 @@ initializers), not by the database.
 |--------------|----------|-------------------------------------------------|
 | Id           | uuid     | PRIMARY KEY                                     |
 | ListingId    | uuid     | NOT NULL, FK → `Listings.Id` (cascade), indexed |
-| Url          | text     | NOT NULL (Cloudinary URL)                       |
+| Url          | text     | NOT NULL (URL from the image storage)           |
 | DisplayOrder | smallint | NOT NULL                                        |
 
 ## Relationships (foreign keys)

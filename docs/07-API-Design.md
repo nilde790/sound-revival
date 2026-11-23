@@ -41,18 +41,20 @@ Every error body is an RFC 9457 **`ProblemDetails`**
 [ADR-009](adr/ADR-009-Error-Handling.md) and 
 [ADR-010](adr/ADR-010-Input-Validation.md).
 
-Business and auth errors (`400`, `401`, `403`, `404`, `500`), produced by 
-the global exception handler from the service's custom exceptions:
+Business and auth errors (`400`, `401`, `403`, `404`), produced by the 
+global exception handler from the service's custom exceptions. Today the 
+body has `title`, `status` and `detail`:
 
 ```json
 {
-  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
   "title": "Forbidden",
   "status": 403,
-  "detail": "You can only modify your own listings.",
-  "instance": "/api/listings/3f2a…"
+  "detail": "You can only modify your own listings."
 }
 ```
+
+Target (debt A9): the same shape as the framework's validation and `500` 
+bodies, which also carry `type` and `traceId`.
 
 Validation errors (`400`), produced automatically by `[ApiController]` 
 from the DataAnnotations on the request DTO, with one entry per invalid 
@@ -66,7 +68,8 @@ field:
   "errors": {
     "Price": [ "The field Price must be between 0.01 and 1000000." ],
     "Title": [ "The Title field is required." ]
-  }
+  },
+  "traceId": "00-…"
 }
 ```
 
@@ -103,6 +106,8 @@ business-rule checks (allowed lists, ownership) stay in the services.
 | ------ | ------------------ | ---- | ------- | ---------------------------------------- |
 | POST   | /api/auth/register | No   | 200     | Create a new user account (rate limited) |
 | POST   | /api/auth/login    | No   | 200     | Authenticate, returns JWT (rate limited) |
+| POST   | /api/auth/refresh  | Refresh cookie | 200 | New access token, rotated refresh cookie — planned, phase 3 |
+| POST   | /api/auth/logout   | Refresh cookie | 204 | Revoke the refresh token, clear the cookie — planned, phase 3 |
 
 **POST /api/auth/register** — body:
 ```json
@@ -128,7 +133,22 @@ user is logged in immediately after registering:
 { "token": "eyJ...", "userId": "...", "displayName": "...", "role": "user" }
 ```
 
-Logout has no endpoint: the client discards the token (FR-3).
+**Refresh tokens** (planned, phase 3, 
+[ADR-012](adr/ADR-012-Browser-Token-Storage.md)): login and register 
+will also set the refresh token in a cookie 
+(`HttpOnly; Secure; SameSite=Strict; Path=/api/auth`); the body stays 
+the same and the frontend keeps the access token in memory only.
+- `POST /api/auth/refresh` — no body; the browser sends the cookie. 
+  Response `200` with the same body as login and a new cookie (the used 
+  refresh token is consumed). Errors: `401` if the cookie is missing, 
+  expired, revoked or already used (reuse revokes all the user's 
+  refresh tokens).
+- `POST /api/auth/logout` — revokes the refresh token and clears the 
+  cookie. Response `204`, also when the cookie is missing or already 
+  revoked (logout is idempotent).
+
+Until phase 3, logout has no endpoint: the client discards the token 
+(FR-3).
 
 ## Users
 
@@ -243,9 +263,10 @@ validated in the service. Response `204`. Errors: `400`, `401`, `403`,
 
 Transitions (decided 2026-11-13): `available` → `sold` and `sold` → 
 `available` are both allowed (a seller can relist, e.g. when a buyer 
-backs out). Setting the current status again is accepted as a no-op 
-(`204`, `updatedAt` refreshed). Any other value → `400`. To revisit 
-when v2 adds `reserved` and automatic sales.
+backs out). Setting the current status again is accepted as a real 
+no-op: `204`, nothing is saved, `updatedAt` is unchanged. Ownership and 
+the value are still checked first, so a non-owner gets `403`. Any other 
+value → `400`. To revisit when v2 adds `reserved` and automatic sales.
 
 ## Images
 
@@ -261,12 +282,16 @@ upload is implemented. Errors: `400` (6th image, invalid file), `401`,
 
 ## Health
 
-| Method | Endpoint  | Auth | Success | Description |
-|--------|-----------|------|---------|-------------|
-| GET    | /health   | No   | 200     | API and database reachable (`503` if the database is not) — planned, NFR-15 |
+| Method | Endpoint       | Auth | Success | Description |
+|--------|----------------|------|---------|-------------|
+| GET    | /health/live   | No   | 200     | Liveness: the process answers; checks no dependency — planned, phase 2 |
+| GET    | /health/ready  | No   | 200     | Readiness: the database is reachable (`503` if not) — planned, phase 2 |
 
-Outside `/api` because it is for infrastructure (deployment platform, 
-monitoring), not for the frontend.
+Outside `/api` because they are for infrastructure (deployment platform, 
+monitoring), not for the frontend. The platform restarts the container 
+when liveness fails and stops sending it traffic when readiness fails 
+(NFR-15). Responses reveal only the overall status, never connection 
+details.
 
 ## Authorization summary
 

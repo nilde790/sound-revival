@@ -1,7 +1,7 @@
 # ADR-008: v2 is committed scope, built after v1
 
-- **Status**: Accepted
-- **Date**: 2026-11-11
+- **Status**: Accepted; token refresh superseded by [ADR-012](ADR-012-Browser-Token-Storage.md) (moved to v1)
+- **Date**: 2026-11-23 (accepted 2026-11-11)
 
 ## Context
 

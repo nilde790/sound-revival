@@ -67,33 +67,47 @@ handling 🟢 · EF Core 🟢 · authorization 🟢 · unit testing with mocks �
 
 ### Phase 2 — Delivery pipeline (walking skeleton)
 
-**Status**: 🚧 current phase (not started).
+**Status**: 🚧 current phase. Plan reviewed on 2026-11-23 against the 
+whole project and current practice; decisions taken before starting: 
+[ADR-011](adr/ADR-011-Core-Infrastructure-Split.md) (project 
+structure) and [ADR-012](adr/ADR-012-Browser-Token-Storage.md) (token 
+storage, which constrains the deployment).
 
-**Goal**: every push is built and tested automatically, and the backend 
-runs online with its database and interactive API docs.
+**Goal**: every push is built, checked and tested automatically, and the 
+backend runs online with its database, logs and interactive API docs.
 
 **Learn first**: [Learning path → Phase 2](dev/LEARNING-PATH.md#phase-2--delivery-pipeline) 
-· **Write at phase start**: `14-DevOps.md`; ADR on the deployment 
-platform (PaaS vs. Azure/AWS: cost, free-tier limits, professional value)
+· **Write before the deploy item** (the earlier items don't depend on 
+the platform): `14-DevOps.md`; ADR on the deployment platform (PaaS vs. 
+Azure/AWS: cost, free-tier limits, professional value). The ADR must 
+cover: frontend and API on the same site (ADR-012); managed PostgreSQL 
+with `pgvector` available (phase 6), on one major version used 
+everywhere (compose, Testcontainers, cloud); the infrastructure-as-code 
+tool (Bicep or Terraform); the image registry; pipeline login to the 
+cloud through OIDC (no stored passwords).
+
+Items in branch order:
 
 | Status | Item | Refs |
 |---|---|---|
-| ⬜ | Build quality: `Directory.Build.props` (`TreatWarningsAsErrors`), Central Package Management, `.editorconfig` + `dotnet format` | B1, B2, B3 |
-| ⬜ | GitHub Actions CI: build, format check, unit tests, coverage; branch protection on `main` | NFR-9, NFR-10 |
-| ⬜ | Integration tests: `WebApplicationFactory` + Testcontainers, run in CI | T4, 10-Testing |
-| ⬜ | Dockerfile (multi-stage) for the API; `docker compose up` runs API + DB | NFR-8 |
-| ⬜ | Configuration per environment; secrets via environment variables | SEC-4, CFG-2, C10 |
-| ⬜ | `GET /health` (API + database) | NFR-15 |
-| ⬜ | OpenAPI UI (Scalar) with Bearer auth | B4 |
-| ⬜ | CORS policy for the future frontend origin | NFR-13, C9 |
-| ⬜ | Deploy backend + database; README shows the live API docs link | ADR (deploy) |
+| ⬜ | Project structure: split `SoundRevival.Repository` into `Core` + `Infrastructure`; `SoundRevival.Tests` → `SoundRevival.UnitTests` | ADR-011, A1 |
+| ⬜ | Build quality and reproducibility: `global.json` (SDK pin), `Directory.Build.props` (`TreatWarningsAsErrors`, analyzers, `EnforceCodeStyleInBuild`), Central Package Management with transitive pinning, lock files, `.editorconfig` + one formatting-only commit (listed in `.git-blame-ignore-revs`), latest patch versions | B1, B2, B3, B6 |
+| ⬜ | Test platform: xUnit v3 + Microsoft.Testing.Platform, coverage | T5, 10-Testing |
+| ⬜ | GitHub Actions CI: locked restore, build, format check, unit tests, coverage summary on PRs; least-privilege permissions, actions pinned by commit SHA; Dependabot (NuGet, Actions, Docker), CodeQL, secret scanning; a ruleset on `main` that requires the checks | NFR-9, NFR-10 |
+| ⬜ | Integration tests: `SoundRevival.IntegrationTests` with `WebApplicationFactory` + Testcontainers, data reset between tests, own CI job | T4, 10-Testing |
+| ⬜ | Containers and configuration: multi-stage Dockerfile (non-root user, minimal base image), `.dockerignore`; `docker compose up` runs API + DB (API starts when the DB is healthy, values from `.env`); `dotnet user-secrets` locally, environment variables when deployed; forwarded headers behind the platform's proxy; structured JSON console logs | NFR-8, NFR-15, SEC-4, CFG-2, C10 |
+| ⬜ | Operational endpoints: `/health/live` and `/health/ready` (database); public OpenAPI document + Scalar with Bearer auth; CORS policy for the frontend origin | NFR-15, B4, NFR-13, C9 |
+| ⬜ | Deploy: `14-DevOps.md` + deployment ADR; infrastructure as code; CD workflow (image pushed to a registry, OIDC login, EF Core migration bundle applied by the pipeline, smoke test on `/health/ready`); README shows the live API docs link | ADR (deploy) |
 
-**Done when**: a PR to `main` can't merge with a failing build/test; 
-`docker compose up` starts the whole backend locally; the deployed API 
-answers `/health` and its docs are public.
+**Done when**: a PR to `main` can't merge with a failing build, format, 
+test or security check; `docker compose up` starts the whole backend 
+locally; the deployed API answers `/health/ready` and its docs are 
+public; the cloud environment can be recreated from code; schema 
+changes reach the deployed database only through the pipeline.
 
 **Skills**: CI/CD 🟢 · Docker 🟢 · integration testing 🟢 · cloud 
-deployment fundamentals 🟢
+deployment fundamentals 🟢 · infrastructure as code 🔵 · software 
+supply-chain security 🔵
 
 ### Phase 3 — API completion
 
@@ -101,24 +115,33 @@ deployment fundamentals 🟢
 realistic data.
 
 **Learn first**: learning path extended at phase start 
-· **Write at phase start**: `12-Security.md`; ADR on image storage 
-(Cloudinary vs. S3/Azure Blob)
+· **Write at phase start**: `12-Security.md` (includes the refresh token 
+details of ADR-012); ADR on image storage (provider, e.g. Cloudinary or 
+the deployment cloud's blob storage; upload flow through the backend or 
+directly to the storage with a short-lived signed URL)
+
+Sort options (FR-21) and the seller's email only for authenticated 
+visitors (FR-15, US-16, US-17) were completed in phase 1.
 
 | Status | Item | Refs |
 |---|---|---|
-| ⬜ | Schema migration: column limits, normalized email, `Brand` column | S1, 05-Database |
-| ⬜ | Brand filter and sort options on `GET /api/listings` | FR-20, FR-21 |
-| ⬜ | Seller info in listing detail (email only when authenticated) | FR-15, US-16, US-17 |
+| ⬜ | Housekeeping before new endpoints, so they don't copy known flaws: repository query type instead of HTTP DTOs, `CancellationToken` propagation, timestamps from `TimeProvider`, one `ProblemDetails` shape, one normalization rule for enum-like input (body and query alike); decide UUIDv7 ids (`Guid.CreateVersion7()`) | A2, A7, A8, A9, C15 |
+| ⬜ | Schema migration: column limits, normalized email (with a data update), `Brand` column | S1, 05-Database |
+| ⬜ | Brand: field on create/update/responses, filter on `GET /api/listings` | FR-6, FR-20, US-14 |
 | ⬜ | `GET/PUT /api/users/me` | FR-4, US-4 |
-| ⬜ | Image upload/delete (max 5, owner only) | FR-19, US-6 |
-| ⬜ | Rate limiting on login/register; constant-time login failure | NFR-11, C5, C8 |
-| ⬜ | Seed data: 1,000 realistic listings | NFR-4 |
+| ⬜ | Refresh tokens: `RefreshTokens` table, `POST /api/auth/refresh` and `/logout`, rotation with reuse detection, `HttpOnly` cookie; short-lived access token | ADR-012, FR-3 |
+| ⬜ | JWT role claim under a key the frontend can read (`role`) | C13 |
+| ⬜ | Image upload/delete (max 5, owner only); stored files deleted with their listing | FR-19, US-6, US-8 |
+| ⬜ | Rate limiting on login/register per client IP (read through the forwarded headers set up in phase 2); constant-time login failure | NFR-11, C5, C8 |
+| ⬜ | Seed data: 1,000 realistic listings, loaded only in local/dev environments | NFR-4 |
 
 **Done when**: all v1 endpoints in 07-API-Design.md are implemented, 
-tested and deployed; NFR-4 is measured on seed data.
+tested and deployed; the seed dataset is ready for the NFR-4 
+measurement (phase 5).
 
-**Skills**: security hardening (OWASP API Top 10) 🟢 · third-party API 
-integration 🟢 · database migrations 🟢
+**Skills**: security hardening (OWASP API Top 10) 🟢 · token lifecycle 
+(refresh, rotation, revocation) 🟢 · third-party API integration 🟢 · 
+database migrations 🟢
 
 ### Phase 4 — Frontend
 
@@ -126,19 +149,21 @@ integration 🟢 · database migrations 🟢
 shipped continuously.
 
 **Learn first**: learning path extended at phase start 
-· **Write at phase start**: review and update `08-Frontend-Design.md`
+· **Write at phase start**: review and update `08-Frontend-Design.md` 
+(styling approach, forms and client-side validation library, API type 
+generation)
 
 | Status | Item | Refs |
 |---|---|---|
-| ⬜ | Project setup (Vite + React + TypeScript), ESLint, type check and tests in CI | NFR-9 |
-| ⬜ | Routing + auth flow (register, login, logout, protected routes) | US-1..US-3 |
+| ⬜ | Project setup (Vite + React + TypeScript), ESLint, type check and tests in CI; API types generated from the backend's OpenAPI document | NFR-9, 07-API-Design |
+| ⬜ | Routing + auth flow (register, login, logout, protected routes); access token in memory, refresh on reload and on `401` | US-1..US-3, ADR-012 |
 | ⬜ | Homepage: listings grid, filters, sort, pagination | US-10..US-15 |
 | ⬜ | Listing detail (seller contact for logged-in users) | US-16, US-17 |
 | ⬜ | Create/edit listing form with image upload | US-5..US-7 |
 | ⬜ | Profile page | US-4 |
 | ⬜ | Responsive layout and accessibility basics | NFR-5, NFR-14 |
 | ⬜ | Component tests (Vitest + React Testing Library) | 10-Testing |
-| ⬜ | Frontend deployed; README gets screenshots and the live link | — |
+| ⬜ | Frontend deployed on the same site as the API, with a Content Security Policy; README gets screenshots and the live link | ADR-012 |
 
 **Done when**: all v1 user stories pass in the deployed application.
 
@@ -155,9 +180,9 @@ journeys work, measure before optimizing.
 
 | Status | Item | Refs |
 |---|---|---|
-| ⬜ | Structured logging everywhere; correlation id per request | NFR-15, LOG-1..4 |
+| ⬜ | Structured logging everywhere, each log line carrying the request's trace id (W3C trace context, no hand-made correlation id) | NFR-15, LOG-1..4 |
 | ⬜ | OpenTelemetry traces and metrics, exported to a free backend | — |
-| ⬜ | Performance check against NFR-4; indexes or caching only if measurements require them | NFR-4, DATA-6 |
+| ⬜ | Load test against NFR-4 on the seed data (e.g. k6); indexes or caching only if measurements require them | NFR-4, DATA-6 |
 | ⬜ | End-to-end tests (Playwright) for the critical journeys, in CI | 10-Testing |
 
 **Skills**: observability / OpenTelemetry 🔵 · performance analysis 🟢 
@@ -200,12 +225,16 @@ ADR where there are trade-offs.
 | ⬜ | **Simulated payment flow** (provider test mode, no real money) | A purchase sets the listing to `sold` via `reserved`: status becomes a state machine; optimistic concurrency required (CONC-2) |
 | ⬜ | **Admin moderation dashboard** (flagged listings, user management) | Builds on FR-18 |
 | ⬜ | **Dynamic, admin-managed categories** | Supersedes ADR-005 for categories; schema + data migration |
-| ⬜ | **Token refresh** and server-side revocation | Supersedes part of ADR-003; completes FR-3 |
+
+Token refresh and server-side revocation moved to v1, phase 3 
+([ADR-012](adr/ADR-012-Browser-Token-Storage.md)).
 
 ## Stretch (optional, after v2 or when a phase needs it)
 
-- Infrastructure as Code (Bicep or Terraform) for the deployed 
-  environment 🔵
+Infrastructure as code moved into phase 2 (deploy item).
+
+- Container image signing and an SBOM (software bill of materials) in 
+  the CD workflow 🔵
 - Background jobs (`BackgroundService` + Channels, or Hangfire) — e.g. 
   image processing, embeddings for semantic search 🟢
 - Caching with `HybridCache`, only if measurements justify it 🟢

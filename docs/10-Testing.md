@@ -26,8 +26,8 @@ problems the others can't.
 
 | Level | State |
 |---|---|
-| Backend unit tests | ✅ in use (`AuthService`) |
-| Backend integration tests | ⬜ planned — set up during the Listings work |
+| Backend unit tests | ✅ in use: services (`AuthService`, `ListingService`, `JwtTokenService`) and request DTO validation |
+| Backend integration tests | ⬜ phase 2 (debt T4) |
 | Frontend unit/component tests | ⬜ with the frontend |
 | End-to-end tests | ⬜ later phase (see 09-Roadmap.md) |
 | Coverage report in CI | ⬜ with the CI pipeline |
@@ -46,6 +46,9 @@ Covered:
 - Every failure branch: each `throw` in a service has a test
 - Validation logic that lives in services (allowed values, state 
   transitions)
+- Request DTO validation (DataAnnotations, `IValidatableObject`, custom 
+  attributes), run through `Validator.TryValidateObject` without HTTP 
+  (`SoundRevival.Tests/Validation/`)
 
 Conventions (naming, assertions, setup, folders): rules TEST-1..7 in 
 the standards.
@@ -119,7 +122,7 @@ enforced for now.
 
 ## What is intentionally NOT tested
 
-- Third-party services themselves (Cloudinary, LLM providers): we test 
+- Third-party services themselves (image storage, LLM providers): we test 
   that our code calls them correctly, behind an interface that can be 
   mocked
 - Framework behaviour (e.g. that ASP.NET Core parses JSON)

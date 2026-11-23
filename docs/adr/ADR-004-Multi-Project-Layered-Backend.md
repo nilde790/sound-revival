@@ -1,7 +1,7 @@
 # ADR-004: Multi-project layered backend solution
 
-- **Status**: Accepted
-- **Date**: 2026-07-12 (recorded retroactively on 2026-11-11)
+- **Status**: Superseded by [ADR-011](ADR-011-Core-Infrastructure-Split.md)
+- **Date**: 2026-11-23 (accepted 2026-07-12, recorded retroactively on 2026-11-11)
 
 ## Context
 

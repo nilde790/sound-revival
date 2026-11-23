@@ -61,7 +61,7 @@ developer. Specific goals include:
 **Planned for v2 (committed, after v1 — see 09-Roadmap.md):**
 - Real-time in-app messaging between users
 - Simulated payments (test mode, no real money)
-- Admin moderation dashboard, dynamic categories, token refresh
+- Admin moderation dashboard, dynamic categories
 
 **Excluded:**
 - Real payments

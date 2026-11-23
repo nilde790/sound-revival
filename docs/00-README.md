@@ -32,13 +32,15 @@ in [ADR-000-Template.md](adr/ADR-000-Template.md).
 | [001](adr/ADR-001-Architecture.md) | Separate C# backend and React frontend | Accepted |
 | [002](adr/ADR-002-Database.md) | PostgreSQL with UUID primary keys | Accepted |
 | [003](adr/ADR-003-Authentication.md) | JWT-based authentication | Accepted |
-| [004](adr/ADR-004-Multi-Project-Layered-Backend.md) | Multi-project layered backend solution | Accepted |
+| [004](adr/ADR-004-Multi-Project-Layered-Backend.md) | Multi-project layered backend solution | Superseded by 011 |
 | [005](adr/ADR-005-Enum-Values-As-Strings.md) | Enum-like values stored as validated strings | Accepted |
 | [006](adr/ADR-006-Dedicated-Listing-Status-Endpoint.md) | Dedicated endpoint for listing status changes | Accepted |
 | [007](adr/ADR-007-No-Generic-Update-In-Repositories.md) | No generic `Update` method in repositories | Accepted |
-| [008](adr/ADR-008-V2-Committed-Scope.md) | v2 is committed scope, built after v1 | Accepted |
+| [008](adr/ADR-008-V2-Committed-Scope.md) | v2 is committed scope, built after v1 | Accepted; token refresh superseded by 012 |
 | [009](adr/ADR-009-Error-Handling.md) | Error handling: exception types, mapping, response format | Accepted |
 | [010](adr/ADR-010-Input-Validation.md) | Input validation approach | Accepted |
+| [011](adr/ADR-011-Core-Infrastructure-Split.md) | Split the backend into Core and Infrastructure | Accepted |
+| [012](adr/ADR-012-Browser-Token-Storage.md) | Access token in memory, refresh token in an `HttpOnly` cookie | Accepted |
 
 ADRs for later decisions (image storage, deployment platform, 
 observability stack, AI features, background jobs) are written 

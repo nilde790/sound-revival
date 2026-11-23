@@ -18,12 +18,12 @@ flowchart LR
     user(["Registered user<br/>(seller / buyer)"])
     admin(["Admin"])
     sr["SoundRevival<br/>used-instrument marketplace"]
-    cloudinary["Cloudinary<br/>image storage"]
+    storage["Image storage<br/>(provider: ADR in phase 3)"]
 
     visitor -- "browses, searches" --> sr
     user -- "publishes, manages listings" --> sr
     admin -- "moderates listings" --> sr
-    sr -. "stores images (planned)" .-> cloudinary
+    sr -. "stores images (planned)" .-> storage
 ```
 
 ## Containers
@@ -37,16 +37,16 @@ flowchart LR
     spa["Frontend SPA<br/>React + Vite + TypeScript<br/>(planned)"]
     api["Backend API<br/>ASP.NET Core .NET 10<br/>REST + JWT"]
     db[("PostgreSQL 16<br/>Users, Listings, Images")]
-    cloudinary["Cloudinary<br/>(planned)"]
+    storage["Image storage<br/>(planned)"]
 
     browser --> spa
     spa -. "JSON over HTTPS<br/>Authorization: Bearer" .-> api
     browser -- "today: .http file / Postman" --> api
     api -- "EF Core + Npgsql" --> db
-    api -. "image upload (planned)" .-> cloudinary
+    api -. "image upload (planned)" .-> storage
 
     classDef planned stroke-dasharray: 5 5
-    class spa,cloudinary planned
+    class spa,storage planned
 ```
 
 ## Backend
@@ -80,7 +80,7 @@ flowchart LR
   - **`SoundRevival.Dto`** — Data Transfer Objects, shaping data 
     sent to/from the API, decoupled from internal database entities
   - **`SoundRevival.Tests`** — unit tests on services, with repository 
-    interfaces mocked (Moq)
+    interfaces mocked (Moq), and validation tests on request DTOs
 - **Dependency direction**: WebApi → Repository (via interfaces) + Dto; 
   Repository → Dto; Dto depends on nothing. Controllers never access the 
   database directly, and entities never leave the Repository project 
@@ -96,7 +96,11 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
   subsequent requests (`Authorization: Bearer <token>`). Passwords are 
   hashed with BCrypt. Token claims: `sub` (user id), `email`, and 
   `ClaimTypes.Role`. Since `MapInboundClaims` is left at its default, 
-  `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`
+  `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`. 
+  Planned (phase 3, [ADR-012](adr/ADR-012-Browser-Token-Storage.md)): a 
+  short-lived access token kept in memory by the frontend, plus a 
+  rotating refresh token in an `HttpOnly` cookie, stored hashed in the 
+  database and revocable
 - **Error handling**: custom exceptions → global `IExceptionHandler` → 
   `ProblemDetails` ([ADR-009](adr/ADR-009-Error-Handling.md))
 - **Validation**: DataAnnotations on request DTOs, business rules in 
@@ -124,33 +128,45 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
 
 ## Image storage
 
-- **Cloudinary**, external cloud storage. The backend uploads images 
-  received from the frontend to Cloudinary, then stores only the 
-  returned URL in the `images` table. This avoids relying on the 
-  application server's filesystem, which is not persistent across 
-  redeploys on most free hosting platforms.
+- **External storage service**: only the returned URL is stored in the 
+  `Images` table. This avoids relying on the application server's 
+  filesystem, which is not persistent across redeploys on most hosting 
+  platforms.
+- **Not decided yet** (ADR at the start of phase 3): the provider 
+  (e.g. Cloudinary or the deployment cloud's blob storage) and the upload 
+  flow (through the backend or directly from the browser to the storage 
+  with a short-lived signed URL; together with the listing or through 
+  the separate endpoint in 07-API-Design.md).
 
 ## Communication flow (example: creating a listing)
 
-1. User fills out the listing form in React and submits, including images
-2. Frontend sends a POST request (via Axios) to the backend API, with 
-   the JWT token in the Authorization header
-3. Backend validates the token (authentication) and the request data
-4. Backend uploads each image to Cloudinary, receiving back a URL for each
-5. Backend saves the listing and image URLs to PostgreSQL via EF Core
-6. Backend returns the created listing (as JSON) to the frontend
-7. Frontend updates the UI (React Query invalidates/refetches the 
+1. User fills out the listing form in React and submits
+2. Frontend sends `POST /api/listings` (via Axios), with the JWT in the 
+   `Authorization` header
+3. Backend validates the token (authentication) and the request data 
+   (DataAnnotations); the service checks the business rules
+4. Backend saves the listing to PostgreSQL via EF Core
+5. Backend returns `201 Created` with a `Location` header and the 
+   created listing (as JSON)
+6. Frontend updates the UI (React Query invalidates/refetches the 
    listings cache)
+
+How images join this flow is decided with the image storage ADR (see 
+Image storage).
 
 ## Deployment (high-level)
 
 - **Backend + Database**: platform not chosen yet. It will be an ADR 
-  when deployment starts, comparing a PaaS that runs a Docker image 
-  (e.g. Render) with a cloud provider (Azure Container Apps, AWS) on 
-  cost, free-tier limits and professional value. Free tiers change 
-  often (see 05-Database.md → Engine)
-- **Frontend**: deployed separately as a static build (e.g. Vercel, 
-  Netlify, or the same cloud provider's static hosting)
+  before the deploy item of phase 2, comparing a PaaS that runs a Docker 
+  image (e.g. Render) with a cloud provider (Azure Container Apps, AWS) 
+  on cost, free-tier limits and professional value. Free tiers change 
+  often (see 05-Database.md → Engine). The environment is described as 
+  infrastructure as code, and schema migrations are applied by the 
+  pipeline (09-Roadmap.md → Phase 2)
+- **Frontend**: deployed as a static build, **on the same site as the 
+  API** (one origin behind a reverse proxy, or subdomains of one 
+  domain), because the refresh token cookie is not sent across sites 
+  ([ADR-012](adr/ADR-012-Browser-Token-Storage.md))
 - **Containerization**: Docker Compose (`docker-compose.yml` at the 
   repository root). Currently runs only PostgreSQL; backend and frontend 
   services will be added so the whole stack can run together locally
@@ -162,6 +178,10 @@ Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ─�
   - Backend: build with zero warnings, `dotnet format --verify-no-changes`
   - Frontend: ESLint, type check (`tsc --noEmit`), build
   - Automated tests (see `10-Testing.md`)
+  - Security: dependency updates (Dependabot), code scanning (CodeQL), 
+    secret scanning
+- A separate deployment workflow builds the container image, applies 
+  migrations and deploys (phase 2)
 - Merging to `main` is only allowed once the pipeline passes, enforcing 
   a baseline of code quality
 
