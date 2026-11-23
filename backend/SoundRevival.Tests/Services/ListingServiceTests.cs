@@ -219,6 +219,42 @@ namespace SoundRevival.Tests.Services
             _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Once);
         }
 
+        // Same status again is a no-op (07-API-Design): nothing saved, UpdatedAt untouched.
+        [Fact]
+        public async Task ChangeStateAsync_SameStatus_DoesNotSave()
+        {
+            _timeProvider.SetUtcNow(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
+
+            var ownerId = Guid.NewGuid();
+            var listing = CreateListing(ownerId);
+            listing.Status = ListingValues.Sold;
+            var originalUpdatedAt = new DateTime(2025, 6, 1, 8, 0, 0, DateTimeKind.Utc);
+            listing.UpdatedAt = originalUpdatedAt;
+            var request = new UpdateListingStatusRequestDto { Status = ListingValues.Sold };
+
+            _mockRepo.Setup(l => l.GetListingByIdAsync(listing.Id)).ReturnsAsync(listing);
+
+            await _listingService.ChangeStateAsync(listing.Id, ownerId, request, isAdmin: false);
+
+            Assert.Equal(ListingValues.Sold, listing.Status);
+            Assert.Equal(originalUpdatedAt, listing.UpdatedAt);
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Never);
+        }
+
+        // The no-op must not bypass ownership: a stranger sending the current status still gets 403.
+        [Fact]
+        public async Task ChangeStateAsync_SameStatusByStranger_ThrowsForbiddenException()
+        {
+            var listing = CreateListing(Guid.NewGuid());
+            var request = new UpdateListingStatusRequestDto { Status = listing.Status };
+
+            _mockRepo.Setup(l => l.GetListingByIdAsync(listing.Id)).ReturnsAsync(listing);
+
+            await Assert.ThrowsAsync<ForbiddenException>(() => _listingService.ChangeStateAsync(listing.Id, Guid.NewGuid(), request, isAdmin: false));
+
+            _mockRepo.Verify(l => l.SaveChangesAsync(), Times.Never);
+        }
+
         // ---------- UpdateAsync ----------
 
         [Fact]

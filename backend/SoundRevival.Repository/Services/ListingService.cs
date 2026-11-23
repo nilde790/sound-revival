@@ -73,7 +73,7 @@ namespace SoundRevival.Repository.Services
         {
             if (userId != listing.UserId && !isAdmin)
             {
-                throw new ForbiddenException("you are not allow to modify this listing");
+                throw new ForbiddenException("you are not allowed to modify this listing");
 
             }
         }
@@ -243,7 +243,10 @@ namespace SoundRevival.Repository.Services
                 throw new BusinessRuleException($"Status '{status}' not valid");
             }
    
-
+            if(status == listingToUpdate.Status)
+            {
+                return;
+            }
 
             listingToUpdate.Status = status;
             listingToUpdate.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;

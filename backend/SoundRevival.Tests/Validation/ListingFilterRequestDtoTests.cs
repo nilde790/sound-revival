@@ -14,9 +14,9 @@ namespace SoundRevival.Tests.Validation
 
             var results = ValidationHelper.Validate(request);
 
-            var errors = Assert.Single(results);
-            Assert.Contains(nameof(ListingFilterRequestDto.MinPrice), errors.MemberNames);
-            Assert.Contains(nameof(ListingFilterRequestDto.MaxPrice), errors.MemberNames);
+            var error = Assert.Single(results);
+            Assert.Contains(nameof(ListingFilterRequestDto.MinPrice), error.MemberNames);
+            Assert.Contains(nameof(ListingFilterRequestDto.MaxPrice), error.MemberNames);
         }
 
         [Fact]
