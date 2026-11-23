@@ -15,7 +15,7 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 ## 1. Current phase and branch
 
 **Phase 2 — Delivery pipeline** (planned, no code yet) · branch 
-`docs/coherence-fixes` (documentation only, not committed)
+`docs/coherence-fixes` (documentation only, committed, PR to open)
 
 On 2026-11-23 the whole project was checked for coherence (docs vs. 
 code, phase vs. phase, current practice). Outcome: docs fixed, phase 2 
@@ -312,5 +312,5 @@ standards.
 ---
 *Last updated: 2026-11-23 — project-wide coherence check; docs fixed; 
 ADR-011 and ADR-012 accepted; phase 2 plan revised (all on 
-`docs/coherence-fixes`, not committed). Next: merge the docs branch, 
-then the Core + Infrastructure split.*
+`docs/coherence-fixes`, committed, PR to open). Next: merge the docs 
+branch, then the Core + Infrastructure split.*
