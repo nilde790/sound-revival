@@ -1,9 +1,9 @@
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Exceptions;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Interfaces;
 
 namespace SoundRevival.Infrastructure.Services
 {

@@ -1,7 +1,7 @@
 using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Listings;
 
-namespace SoundRevival.Infrastructure.Interfaces
+namespace SoundRevival.Core.Interfaces
 {
     public interface IListingService
     {  

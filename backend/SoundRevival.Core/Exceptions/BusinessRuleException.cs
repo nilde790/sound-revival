@@ -1,4 +1,5 @@
-namespace SoundRevival.Infrastructure.Exceptions
+
+namespace SoundRevival.Core.Exceptions
 {
     public class BusinessRuleException : AppException
     {

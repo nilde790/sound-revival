@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Exceptions;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Interfaces;
 
 namespace SoundRevival.Infrastructure.Services
 {

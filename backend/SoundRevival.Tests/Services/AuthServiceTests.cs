@@ -1,11 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Moq;
 using Npgsql;
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Exceptions;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Interfaces;
 using SoundRevival.Infrastructure.Services;
 
 namespace SoundRevival.Tests.Services

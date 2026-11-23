@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Core.Entities;
 
 namespace SoundRevival.Infrastructure
 

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SoundRevival.Infrastructure.Entities
+namespace SoundRevival.Core.Entities
 {
     public class Listing
     {

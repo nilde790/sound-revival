@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Core.Entities;
 
-namespace SoundRevival.Infrastructure.Interfaces
+namespace SoundRevival.Core.Interfaces
 {
     public interface IUserRepository
     {

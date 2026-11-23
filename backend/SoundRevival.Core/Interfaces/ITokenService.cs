@@ -1,6 +1,6 @@
-using SoundRevival.Infrastructure.Entities;
+using SoundRevival.Core.Entities;
 
-namespace SoundRevival.Infrastructure.Interfaces
+namespace SoundRevival.Core.Interfaces
 {
     /// <summary>
     /// Issues access tokens for authenticated users. Keeps token format, signing and expiry

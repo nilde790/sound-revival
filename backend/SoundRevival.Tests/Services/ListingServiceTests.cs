@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Time.Testing;
 using Moq;
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Exceptions;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Interfaces;
 using SoundRevival.Infrastructure.Services;
 
 namespace SoundRevival.Tests.Services

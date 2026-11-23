@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Interfaces;
 
 namespace SoundRevival.Infrastructure.Repository
 {

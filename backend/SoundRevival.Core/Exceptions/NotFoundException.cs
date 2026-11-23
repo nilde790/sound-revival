@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SoundRevival.Infrastructure.Exceptions
+namespace SoundRevival.Core.Exceptions
 {
     public class NotFoundException : AppException
     {

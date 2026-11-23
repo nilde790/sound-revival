@@ -3,8 +3,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SoundRevival.Infrastructure.Entities;
-using SoundRevival.Infrastructure.Interfaces;
+using SoundRevival.Core.Entities;
+using SoundRevival.Core.Interfaces;
 using SoundRevival.Infrastructure.Settings;
 
 namespace SoundRevival.Infrastructure.Services

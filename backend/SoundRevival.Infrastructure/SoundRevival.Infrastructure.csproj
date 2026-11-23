@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SoundRevival.Core\SoundRevival.Core.csproj" />
     <ProjectReference Include="..\SoundRevival.Dto\SoundRevival.Dto.csproj" />
   </ItemGroup>
 
