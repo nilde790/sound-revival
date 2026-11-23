@@ -116,8 +116,9 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
     longer reads `JwtSettings`.
   - 14 unit tests (10 `AuthService`, 4 `JwtTokenService`). Auth flow and 
     search checked end to end with curl on 2026-11-16.
-- 🔄 **Step 8 — unit tests** (in progress; 69 tests in total, all 
-  green, build warning-free; nothing committed since `b993a04`):
+- ✅ **Step 8 — unit tests** (191 tests, all green, build 
+  warning-free). Committed: overflow fix `1bdf78d`, `ListingService` 
+  tests `20dcc6a`; **validation tests uncommitted**:
   - ✅ **`ListingService` complete** 
     (`SoundRevival.Tests/Services/ListingServiceTests.cs`): helpers 
     `CreateListing(ownerId)`, `CreateUpdateRequest()`, 
@@ -143,13 +144,28 @@ thanks to two documented pins (`Microsoft.OpenApi` 2.7.5 for NU1903,
   - `GetListingsAsync`: mapping to summary, empty page, paging fields 
     (`TotalCount` 23 ≠ 3 items, so `TotalItems` can't come from 
     `Items.Count`).
-  - 🔄 **Validation tests** (`SoundRevival.Tests/Validation/`): 
-    `MaxDecimalPlacesAttributeTests` written (valid / invalid 
-    `TheoryData<decimal>` via `[MemberData]`, `null`). Adding 
-    `decimal.MaxValue` exposed a real bug: `number * 10^n` overflowed → 
-    `OverflowException` → 500 on user input. Fixed with 
-    `Math.Round(number, MaxDecimalPlaces) == number`; new rule **VAL-9** 
-    (custom attributes never throw).
+  - ✅ **Validation tests** (`SoundRevival.Tests/Validation/`):
+    - `MaxDecimalPlacesAttributeTests` (valid / invalid 
+      `TheoryData<decimal>` incl. `decimal.MinValue`/`MaxValue`, `null`). 
+      `MaxValue` exposed a real bug: `number * 10^n` overflowed → 
+      `OverflowException` → 500 on user input. Fixed with 
+      `Math.Round(number, MaxDecimalPlaces) == number`; new rule 
+      **VAL-9** (custom attributes never throw).
+    - `ValidationHelper.Validate(object)` → `Validator.TryValidateObject` 
+      with `validateAllProperties: true`, returns the result list.
+    - One class per request DTO (create, update, status, filter, 
+      pagination, register, login). Pattern: valid helper, change one 
+      field, `Assert.Single` + `MemberNames` contains `nameof(field)`; 
+      each invalid value breaks exactly one rule. Covered: lengths at 
+      the boundaries, `Required` with `null`/`""`/`"   "`, ranges, 
+      decimals, `MinPrice > MaxPrice` (error on both fields) and the 
+      fact that `IValidatableObject.Validate` is skipped when an 
+      attribute fails. Tests also pin what the DTO does *not* check 
+      (unknown status → service; short password / odd email at login).
+    - Decided: `[StringLength]` on `Category`/`Condition` stays even 
+      though the service checks the exact value (defense in depth, 
+      mirrors the column limit; `[AllowedValues]` would contradict 
+      ADR-010).
   - `ListingService` now takes `TimeProvider` (registered as 
     `TimeProvider.System` singleton) for `UpdatedAt`; STYLE-1 and TEST-5 
     updated.
@@ -171,6 +187,7 @@ being touched. Remove a row when fixed.
 |---|---|---|---|
 | C5 🟠 | No rate limiting on login/register | `AuthController` | SEC-5 |
 | C11 🟠 | Default order is now newest first with id tiebreaker; the `sort` parameter (`price_asc`, `price_desc`, other values → 400) is still missing from the filter and the query | `ListingFilterRequestDto`, `ListingRepository` | DATA-2 |
+| C14 🟠 | List filters `category`, `condition`, `status` are not checked against the allowed values: 07-API-Design says other values → `400`, the code returns `200` with an empty list (`status` can even be `null`). Filter DTO also allows 150 chars for category/condition vs 50 on create | `ListingFilterRequestDto`, `ListingService.GetListingsAsync` | VAL / code ≠ docs |
 | C12 🟡 | `Create` and `Update` listing DTOs duplicate the same rules (chosen for clarity): any rule change, e.g. adding `Brand`, must be made in both | `CreateListingRequestDto`, `UpdateListingRequestDto` | DRY |
 | S1 🟠 | Schema changes pending: column limits, normalized email, `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
 | C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (fix before phase 4, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
@@ -217,33 +234,18 @@ before the error handling step).
 5. ~~`Roles` / `ListingValues` constants (B5)~~ ✅ done
 6. ~~Migrate auth to ADR-009 (E1)~~ ✅ done
 7. ~~Fix touched debt: C2, C3, C4, C6, C7, A3~~ ✅ done (details in §3)
-8. **In progress** — unit tests (state in §3). `ListingService` done; 
-   validation tests (8.5) resume with, in order:
-   1. Finish `MaxDecimalPlacesAttributeTests`: add `decimal.MinValue` 
-      to the valid cases (VAL-9 asks for both extremes), space after 
-      the comma in `InvalidPrices`, blank lines;
-   2. **Developer writes** `SoundRevival.Tests/Validation/ValidationHelper.cs` 
-      (explained, not written yet): `public static` 
-      `List<ValidationResult> Validate(object model)` → 
-      `new ValidationContext(model)`, empty list, 
-      `Validator.TryValidateObject(..., validateAllProperties: true)` 
-      (without it only `[Required]` is checked), return the list;
-   3. `CreateListingRequestDtoTests`: developer writes the first test 
-      (new: assert the error is on the right field via `MemberNames`), 
-      Claude the rest (lengths at the boundaries, `Required`, `Price` 
-      range and decimals);
-   4. `ListingFilterRequestDtoTests` incl. `MinPrice > MaxPrice` — 
-      developer writes it (new: `IValidatableObject.Validate` runs only 
-      when all attributes pass);
-   5. Claude: `UpdateListingRequestDto` (mirrors create, C12), 
-      `UpdateListingStatusRequestDto`, `PaginationRequestDto`, 
-      `RegisterRequestDto`, `LoginRequestDto`.
-   Working split agreed: Claude writes repetitive tests and proposes 
-   that the developer write each piece that introduces something new.
-   Then commit step 8 (suggested: `fix: prevent overflow in 
-   MaxDecimalPlacesAttribute` separate from `test: …`).
-9. Then close phase 1: `sort` parameter (C11), merge 
-   `feature/CRUDlistings` into `main` via PR
+8. ~~Unit tests~~ ✅ done (§3). **Commit the validation tests** 
+   (suggested: `test: add request DTO validation tests`). Optional 
+   tidy-ups in the developer's files: unused `using`s, `errors` → 
+   `error` in the first filter test, typo "minimun" and the redundant 
+   `is not null` checks in `ListingFilterRequestDto.Validate` (lifted 
+   comparison already returns `false` when either side is `null`).
+9. Then close phase 1: filter value validation (C14) and `sort` 
+   parameter (C11) — same DTO and query, do them together; merge 
+   `feature/CRUDlistings` into `main` via PR.
+
+Working split agreed: Claude writes repetitive code/tests and proposes 
+that the developer write each piece that introduces something new.
 
 Working mode: `/learn-code` — the developer writes the code, Claude 
 explains, gives hints on other examples and reviews each file against the 
@@ -253,7 +255,7 @@ Then phase 2 (CI, integration tests, Docker, backend deploy) — see the
 roadmap.
 
 ---
-*Last updated: 2026-11-23 — `ListingService` tests complete; 
-`MaxDecimalPlacesAttribute` tests found and fixed an overflow (→ VAL-9); 
-69 tests, all green, build warning-free; work uncommitted. Next: finish 
-the attribute tests, then `ValidationHelper` (developer).*
+*Last updated: 2026-11-23 — step 8 complete: request DTO validation 
+tests (191 tests, all green, build warning-free), uncommitted; new debt 
+C14 (filter values not validated, code ≠ 07-API-Design). Next: commit, 
+then C14 + C11, then PR to `main`.*
