@@ -55,6 +55,7 @@ namespace SoundRevival.Repository.Services
             };
             return listingDto;
         }
+
         private static void CheckCategoriesAndConditions(string category, string condition)
         {
             if (!ListingValues.Categories.Contains(category))
@@ -67,12 +68,33 @@ namespace SoundRevival.Repository.Services
             }
 
         }
+
         private static void CheckOwnership(Guid userId, bool isAdmin, Listing listing)
         {
             if (userId != listing.UserId && !isAdmin)
             {
                 throw new ForbiddenException("you are not allow to modify this listing");
 
+            }
+        }
+
+        private static void CheckFilterValues(ListingFilterRequestDto filter)
+        {
+            if (filter.Category != null && !ListingValues.Categories.Contains(filter.Category))
+            {
+                throw new BusinessRuleException($"Category '{filter.Category}' not valid");
+            }
+            if (filter.Condition != null && !ListingValues.Conditions.Contains(filter.Condition))
+            {
+                throw new BusinessRuleException($"Condition '{filter.Condition}' not valid");
+            }
+            if (!ListingValues.Statuses.Contains(filter.Status))
+            {
+                throw new BusinessRuleException($"Status '{filter.Status}' not valid");
+            }
+            if (!ListingValues.Sorts.Contains(filter.Sort))
+            {
+                throw new BusinessRuleException($"Sort '{filter.Sort}' not valid");
             }
         }
 
@@ -94,6 +116,8 @@ namespace SoundRevival.Repository.Services
         }
         public async Task<PagedResponseDto<ListingSummaryResponseDto>> GetListingsAsync(PaginationRequestDto page, ListingFilterRequestDto filter)
         {
+            CheckFilterValues(filter);
+
             var paginatedItems = await _listingRepository.GetListingsAsync(filter, page);
 
             var listingsSummarized = paginatedItems.Items.Select(p => new ListingSummaryResponseDto()

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SoundRevival.Dto.Common;
+using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
 using SoundRevival.Repository.Entities;
 using SoundRevival.Repository.Interfaces;
@@ -45,6 +46,7 @@ namespace SoundRevival.Repository.Repository
             return listing;
 
         }
+
         public async Task<PagedResult<Listing>> GetListingsAsync(ListingFilterRequestDto filter, PaginationRequestDto pagination)
         {
             IQueryable<Listing> query = _context.Listings.AsNoTracking();
@@ -85,7 +87,14 @@ namespace SoundRevival.Repository.Repository
 
             var page = new PagedResult<Listing>();
             page.TotalCount = await query.CountAsync();
-            query = query.OrderByDescending(l => l.CreatedAt).ThenBy(l => l.Id);
+            query = filter.Sort switch
+            {
+                ListingValues.SortNewest => query.OrderByDescending(l => l.CreatedAt).ThenBy(l => l.Id),
+                ListingValues.SortPriceAsc => query.OrderBy(l => l.Price).ThenBy(l => l.Id),
+                ListingValues.SortPriceDesc => query.OrderByDescending(l => l.Price).ThenBy(l => l.Id),
+                _ => throw new ArgumentOutOfRangeException(nameof(filter), filter.Sort, "Unknown sort value")
+            };
+                
             page.Items = await query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize).ToListAsync();         
              
             return page;
