@@ -4,7 +4,7 @@ using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Core.Interfaces;
 
-namespace SoundRevival.Infrastructure.Services
+namespace SoundRevival.Core.Services
 {
     public class AuthService : IAuthService
     {

@@ -5,7 +5,7 @@ using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
 using SoundRevival.Core.Interfaces;
 
-namespace SoundRevival.Infrastructure.Services
+namespace SoundRevival.Core.Services
 {
     public class ListingService : IListingService
     {

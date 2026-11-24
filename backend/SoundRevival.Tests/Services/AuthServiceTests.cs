@@ -4,7 +4,7 @@ using SoundRevival.Core.Exceptions;
 using SoundRevival.Dto.Auth;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Core.Interfaces;
-using SoundRevival.Infrastructure.Services;
+using SoundRevival.Core.Services;
 
 namespace SoundRevival.Tests.Services
 {

@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Infrastructure;
 using SoundRevival.Core.Exceptions;
 using SoundRevival.Core.Interfaces;
+using SoundRevival.Core.Services;
 using SoundRevival.Infrastructure.Repository;
 using SoundRevival.Infrastructure.Services;
 using SoundRevival.Infrastructure.Settings;

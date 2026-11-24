@@ -29,14 +29,14 @@ tests passing):
 | 2 · `SoundRevival.Core` created; `Entities/`, `Exceptions/`, `Interfaces/` moved | ✅ `6e0cb9f` |
 | 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException`; no EF/Npgsql left in `AuthService` or its tests | ✅ `54548c6` |
 | 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`), injected in `AuthService`, registered as **singleton** in `Program.cs`; `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ |
-| **4 · move `AuthService`, `ListingService` to Core (`JwtTokenService`, `JwtSettings` stay)** | ⬜ **next** |
-| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` | ⬜ |
+| 4 · move `AuthService`, `ListingService` to `Core/Services` (`JwtTokenService`, `JwtSettings`, `BCryptPasswordHasher` stay); Core references only Dto | ✅ |
+| **5 · `SoundRevival.Tests` → `SoundRevival.UnitTests`** | ⬜ **next** |
 | 6 · `Program.cs` registrations; optional `AddInfrastructure()` (closes A5) | ⬜ |
 | 7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime) | ⬜ |
 | 8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5) | ⬜ |
 
-**Next action: step 4** (move `AuthService` and `ListingService` to 
-Core). Baseline: 0 warnings, 223 tests green.
+**Next action: step 5** (rename the test project). Baseline: 0 
+warnings, 223 tests green.
 
 Notes collected during the refactor:
 - Migration files keep the old CLR names as strings 
@@ -47,6 +47,10 @@ Notes collected during the refactor:
 - Optional test hardening: `RegisterAsync_OtherSaveError_IsNotTranslated` 
   uses `InvalidOperationException`, which `AuthService` also throws 
   itself; assert the message or use a type the service never throws.
+- For step 8 (ADR-011 vs code): the ADR says Infrastructure depends 
+  on Core only, but its `.csproj` also references Dto because 
+  `ListingRepository` takes `ListingFilterRequestDto` (A2); the ADR's 
+  BCrypt open point is now decided (`IPasswordHasher`).
 - Found in 3e review, to decide (proposed debt row, SEC): BCrypt uses 
   only the first 72 bytes of a password, while `RegisterRequestDto` 
   allows 128 characters (up to more bytes in UTF-8): longer passwords 
@@ -350,4 +354,4 @@ standards.
 *Last updated: 2026-11-24 — PR #5 (coherence check, ADR-011, ADR-012) 
 merged; Core + Infrastructure split steps 0–3 committed on 
 `feature/core-infrastructure`, plus step 3e (password hasher, A10 
-closed, 223 tests). Next: step 4 in §1.*
+closed, 223 tests) and step 4 (services in Core). Next: step 5 in §1.*
