@@ -32,10 +32,10 @@ tests passing):
 | 4 · move `AuthService`, `ListingService` to `Core/Services` (`JwtTokenService`, `JwtSettings`, `BCryptPasswordHasher` stay); Core references only Dto | ✅ |
 | 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ |
 | 6 · `Infrastructure/DependencyInjection.cs` → `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped (infrastructure / core / web); Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ |
-| **7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime)** | ⬜ **next** |
-| 8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5) | ⬜ |
+| 7 · full check (2026-11-24): build 0 warnings, 223 tests; `has-pending-model-changes` → no changes (old CLR names in the snapshot are harmless); `migrations list` → `InitialCreate` applied; app starts on https :7196 (DI validated on build); curl: register 200, duplicate 400, login 200 (real BCrypt), wrong password 401, create listing 201 + `Location`; no errors in the log | ✅ |
+| **8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5)** | ⬜ **next** |
 
-**Next action: step 7** (full check, including runtime DI). Baseline: 0 
+**Next action: step 8** (docs), then PR into `main`. Baseline: 0 
 warnings, 223 tests green. Docs still naming `SoundRevival.Tests` 
 (06-Architecture, 09-Roadmap, 10-Testing, ADR-011, sections of this 
 file describing past work) are updated in step 8.
@@ -357,4 +357,5 @@ merged; Core + Infrastructure split steps 0–3 committed on
 `feature/core-infrastructure`, plus step 3e (password hasher, A10 
 closed, 223 tests), step 4 (services in Core), step 5 
 (`SoundRevival.UnitTests`); step 6 (`AddInfrastructure`, A5 closed) 
-uncommitted. Next: step 7 in §1.*
+and step 7 (full check, all green). Next: step 8 (docs) in §1, then 
+PR.*
