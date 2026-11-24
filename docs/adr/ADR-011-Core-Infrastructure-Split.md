@@ -123,6 +123,28 @@ Rules that follow:
     `reserved` state, rule ARCH-8), split Core into Domain + Application 
     with a new ADR superseding this one.
 
+## Implementation notes (2026-11-24)
+
+Appended after implementation; the decision above is unchanged. They 
+record how the open points were settled and where the code differs 
+from the table.
+
+- **Unique violation**: the repository throws 
+  `UniqueConstraintViolationException` (Core); `AuthService` turns it 
+  into `BusinessRuleException("Email already registered")`.
+- **BCrypt open point**: decided for `IPasswordHasher` (Core), 
+  implemented by `BCryptPasswordHasher` (Infrastructure, singleton). 
+  Core has no BCrypt package, and `AuthService` tests use a fake hasher.
+- **Registration**: `AddInfrastructure(configuration)` in 
+  Infrastructure registers DbContext, repositories, token service, 
+  hasher and validated `JwtSettings` (A5 closed). Core services stay 
+  registered in `Program.cs`.
+- **Deviation from the table**: Infrastructure references **Core and 
+  Dto**, because `IListingRepository` takes filter DTOs. It disappears 
+  with A2 (query object in Core).
+- `Microsoft.EntityFrameworkCore.Design` stays in WebApi: `dotnet ef` 
+  needs it in the startup project.
+
 ## Links
 
 - [ADR-004](ADR-004-Multi-Project-Layered-Backend.md) (superseded)

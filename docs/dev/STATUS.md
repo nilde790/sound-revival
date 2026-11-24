@@ -14,55 +14,49 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 in progress) · branch 
-`feature/core-infrastructure` (not pushed)
+**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 done, PR pending) · 
+branch `feature/core-infrastructure` (not pushed)
 
-### Work in progress — Core + Infrastructure split (ADR-011)
+### Resume here — open the PR for the Core + Infrastructure split
 
-Resume here. Steps of the refactor, each ending green (0 warnings, all 
-tests passing):
+The split (ADR-011) is **complete on the branch**: code, tests and docs. 
+Baseline: 0 warnings, 223/223 tests green, app checked end to end 
+(2026-11-24). If `git status` still shows the step 8 doc changes, 
+commit them first (`docs: describe Core + Infrastructure split`).
+
+**Next action**: push `feature/core-infrastructure` and open the PR into 
+`main` (only when the developer asks). Suggested PR body: what moved 
+(table below), A1/A5/A10 closed, how it was verified (step 7), the 
+ADR-011 deviation (Infrastructure → Dto, A2). After the merge: delete 
+the branch, update this section and §3, start item 2 (build quality).
 
 | Step | State |
 |---|---|
 | 0 · branch + baseline (220 tests) | ✅ |
 | 1 · `SoundRevival.Repository` → `SoundRevival.Infrastructure` | ✅ `972633c` |
 | 2 · `SoundRevival.Core` created; `Entities/`, `Exceptions/`, `Interfaces/` moved | ✅ `6e0cb9f` |
-| 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException`; no EF/Npgsql left in `AuthService` or its tests | ✅ `54548c6` |
-| 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`), injected in `AuthService`, registered as **singleton** in `Program.cs`; `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ |
-| 4 · move `AuthService`, `ListingService` to `Core/Services` (`JwtTokenService`, `JwtSettings`, `BCryptPasswordHasher` stay); Core references only Dto | ✅ |
-| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ |
-| 6 · `Infrastructure/DependencyInjection.cs` → `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped (infrastructure / core / web); Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ |
-| 7 · full check (2026-11-24): build 0 warnings, 223 tests; `has-pending-model-changes` → no changes (old CLR names in the snapshot are harmless); `migrations list` → `InitialCreate` applied; app starts on https :7196 (DI validated on build); curl: register 200, duplicate 400, login 200 (real BCrypt), wrong password 401, create listing 201 + `Location`; no errors in the log | ✅ |
-| **8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5)** | ⬜ **next** |
+| 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException` | ✅ `54548c6` |
+| 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`, singleton); `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ `a41da96` |
+| 4 · `AuthService`, `ListingService` moved to `Core/Services`; Core references only Dto | ✅ `60f241d` |
+| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ `fecf933` |
+| 6 · `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped; Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ `474c4eb` |
+| 7 · full check (2026-11-24): build 0 warnings, 223 tests; `has-pending-model-changes` → no changes; `migrations list` → `InitialCreate` applied; app starts on https :7196; curl: register 200, duplicate 400, login 200, wrong password 401, create listing 201 + `Location` | ✅ `69ce4fc` |
+| 8 · docs: 06-Architecture (backend projects, dependencies, lifetimes), CLAUDE.md and README (EF commands, layers), 05-Database, 10-Testing, 09-Roadmap (item ✅), ADR-011 (implementation notes), ENGINEERING-STANDARDS (ARCH-7 lifetimes, SEC-3 hasher + 72 bytes), STATUS (A1 closed, C16 added) | ✅ |
 
-**Next action: step 8** (docs), then PR into `main`. Baseline: 0 
-warnings, 223 tests green. Docs still naming `SoundRevival.Tests` 
-(06-Architecture, 09-Roadmap, 10-Testing, ADR-011, sections of this 
-file describing past work) are updated in step 8.
-
-Notes collected during the refactor:
+Notes from the refactor (still valid):
 - Migration files keep the old CLR names as strings 
-  (`"SoundRevival.Repository.Entities.User"`) on purpose; checked in 
-  step 7 with `has-pending-model-changes`.
-- The `23505` filter now lives in `UserRepository`: covered only by the 
+  (`"SoundRevival.Repository.Entities.User"`) on purpose; harmless, 
+  checked with `has-pending-model-changes`.
+- The `23505` filter lives in `UserRepository`: covered only by the 
   phase 2 integration tests (T4), not by unit tests.
-- Optional test hardening: `RegisterAsync_OtherSaveError_IsNotTranslated` 
-  uses `InvalidOperationException`, which `AuthService` also throws 
-  itself; assert the message or use a type the service never throws.
-- For step 8 (ADR-011 vs code): the ADR says Infrastructure depends 
-  on Core only, but its `.csproj` also references Dto because 
-  `ListingRepository` takes `ListingFilterRequestDto` (A2); the ADR's 
-  BCrypt open point is now decided (`IPasswordHasher`).
-- Found in 3e review, to decide (proposed debt row, SEC): BCrypt uses 
-  only the first 72 bytes of a password, while `RegisterRequestDto` 
-  allows 128 characters (up to more bytes in UTF-8): longer passwords 
-  are silently truncated. Options: lower the DTO limit, or a byte check 
-  in the hasher.
+- Test data left in the local DB by step 7 (user `step7-…@example.test`, 
+  listing "Step 7 test guitar"): delete when convenient.
 - Trailing whitespace and unused `using`s left in touched files: 
   `dotnet format` handles them in the build-quality item (B3).
 - Use `dotnet test` without `--no-build` after a change: with a failed 
   build, `--no-build` runs the old test assembly. Save all in Visual 
   Studio before running commands from the terminal.
+- Docker Desktop must be running before `docker compose up -d`.
 
 ### Coherence check (2026-11-23)
 
@@ -127,7 +121,7 @@ warning-free.
   `027a09f`): abstract `AppException` (message + `StatusCode`) 
   with `NotFoundException` 404, `ForbiddenException` 403, 
   `BusinessRuleException` 400, `InvalidCredentialsException` 401 
-  (`SoundRevival.Repository/Exceptions`); `GlobalExceptionHandler` 
+  (now `SoundRevival.Core/Exceptions`); `GlobalExceptionHandler` 
   (`SoundRevival.WebApi/ExceptionHandling`) writes `ProblemDetails` as 
   `application/problem+json` for `AppException`, returns `false` for 
   anything else (framework → opaque `500`, logged); registered with 
@@ -187,7 +181,7 @@ warning-free.
   Committed: overflow fix `1bdf78d`, `ListingService` tests `20dcc6a`, 
   validation tests `82b425d`:
   - ✅ **`ListingService` complete** 
-    (`SoundRevival.Tests/Services/ListingServiceTests.cs`): helpers 
+    (`SoundRevival.UnitTests/Services/ListingServiceTests.cs`): helpers 
     `CreateListing(ownerId)`, `CreateUpdateRequest()`, 
     `CreateCreateRequest()` (valid defaults, each test changes one 
     field); `FakeTimeProvider` passed to the constructor;
@@ -211,7 +205,7 @@ warning-free.
   - `GetListingsAsync`: mapping to summary, empty page, paging fields 
     (`TotalCount` 23 ≠ 3 items, so `TotalItems` can't come from 
     `Items.Count`).
-  - ✅ **Validation tests** (`SoundRevival.Tests/Validation/`):
+  - ✅ **Validation tests** (`SoundRevival.UnitTests/Validation/`):
     - `MaxDecimalPlacesAttributeTests` (valid / invalid 
       `TheoryData<decimal>` incl. `decimal.MinValue`/`MaxValue`, `null`). 
       `MaxValue` exposed a real bug: `number * 10^n` overflowed → 
@@ -293,7 +287,8 @@ being touched. Remove a row when fixed.
 | S1 🟠 | Schema changes pending: column limits, normalized email (include a data update `lower(trim(email))`, after checking for collisions, so accounts stored before normalization can still log in), `Brand` column (05-Database.md) | entities, migrations | DATA-5 |
 | C13 🟡 | The JWT payload carries the role under the long `ClaimTypes.Role` URI, not `role`: ASP.NET reads it, but the React frontend would have to decode that key (phase 3, e.g. `JsonWebTokenHandler` + `SecurityTokenDescriptor`, and check `RoleClaimType`) | `JwtTokenService` | — |
 | C15 🟡 | Enum-like input normalized inconsistently: `status` in the PATCH body is trimmed (`" sold "` accepted), while query filters must match exactly. One rule for body and query (phase 3 housekeeping) | `ListingService` | VAL-3 |
-| C8 🟡 | Unknown-email login skips `BCrypt.Verify`: timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
+| C16 🟡 | BCrypt hashes only the first 72 bytes, but `RegisterRequestDto` allows 128 characters (more bytes in UTF-8): two long passwords sharing the first 72 bytes are equivalent, silently. Options: lower `[StringLength]` to 72 *and* reject passwords over 72 UTF-8 bytes (a custom attribute, VAL-9), or check the byte length in `BCryptPasswordHasher`; mirror the limit in 07-API-Design | `RegisterRequestDto`, `BCryptPasswordHasher` | SEC-3 |
+| C8 🟡 | Unknown-email login skips the password verification (`IPasswordHasher.VerifyPassword`): timing reveals registered emails | `AuthService.LoginAsync` | SEC-6 |
 | C9 🟡 | No CORS policy | `Program.cs` | SEC-8 |
 | C10 🟡 | `UseHttpsRedirection` with an HTTP-only launch profile | `Program.cs` | CFG-2 |
 
@@ -301,7 +296,6 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name, and services can reference EF Core/Npgsql (`AuthService` does). Decided: split into Core + Infrastructure, first item of phase 2 | solution | ADR-011 |
 | A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service (phase 3 housekeeping; the query type belongs in Core, ADR-011) | `IListingRepository`, `ListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable (phase 3 housekeeping) | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
@@ -312,7 +306,7 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Where | Rule |
 |---|---|---|---|
-| T4 🟡 | No integration tests yet (phase 2). The repository query (filters, `sort`, paging) is only checked manually: a regression in the `ORDER BY` passed all unit tests | `SoundRevival.Tests` | TEST-6 |
+| T4 🟡 | No integration tests yet (phase 2). The repository query (filters, `sort`, paging) and the `23505` translation in `UserRepository` are only checked manually: a regression in the `ORDER BY` passed all unit tests | `SoundRevival.Infrastructure` (future `SoundRevival.IntegrationTests`) | TEST-6 |
 
 **Build & tooling** (phase 2)
 
@@ -332,9 +326,9 @@ in progress (items in branch order in
 [09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton)). 
 The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pull/5)).
 
-1. **Finish the Core + Infrastructure split** (ADR-011, A1) on 
-   `feature/core-infrastructure`: resume from "Work in progress" in §1 
-   (step 3e tests, then steps 4–8), then PR into `main`.
+1. **PR for the Core + Infrastructure split** (ADR-011): the work on 
+   `feature/core-infrastructure` is complete; push and open the PR into 
+   `main` (§1).
 2. Then build quality (B1–B3, B6) → test platform (T5) → CI → 
    integration tests (T4), so every later PR is checked automatically.
 3. `14-DevOps.md` and the deployment ADR come right before the deploy 
@@ -352,10 +346,7 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-24 — PR #5 (coherence check, ADR-011, ADR-012) 
-merged; Core + Infrastructure split steps 0–3 committed on 
-`feature/core-infrastructure`, plus step 3e (password hasher, A10 
-closed, 223 tests), step 4 (services in Core), step 5 
-(`SoundRevival.UnitTests`); step 6 (`AddInfrastructure`, A5 closed) 
-and step 7 (full check, all green). Next: step 8 (docs) in §1, then 
-PR.*
+*Last updated: 2026-11-24 — Core + Infrastructure split complete on 
+`feature/core-infrastructure` (steps 0–8: code, 223 tests, full check, 
+docs); A1, A5, A10 closed; C16 (BCrypt 72-byte limit) added. Next: 
+push and PR into `main` (§1).*

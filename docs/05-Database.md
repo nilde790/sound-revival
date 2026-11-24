@@ -28,7 +28,7 @@ but not the stored files: the image feature must delete them explicitly.
 ## Schema
 
 The schema is generated **Code First** by EF Core from the entity classes 
-in `SoundRevival.Repository/Entities/` and the fluent configuration in 
+in `SoundRevival.Core/Entities/` and the fluent configuration in 
 `AppDbContext.OnModelCreating`. EF Core's default naming is kept: table 
 and column names are **PascalCase** (e.g. `"Listings"."UserId"`), so 
 they must be double-quoted in raw SQL.

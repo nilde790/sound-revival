@@ -48,7 +48,7 @@ Covered:
   transitions)
 - Request DTO validation (DataAnnotations, `IValidatableObject`, custom 
   attributes), run through `Validator.TryValidateObject` without HTTP 
-  (`SoundRevival.Tests/Validation/`)
+  (`SoundRevival.UnitTests/Validation/`)
 
 Conventions (naming, assertions, setup, folders): rules TEST-1..7 in 
 the standards.
