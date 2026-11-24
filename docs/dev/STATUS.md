@@ -14,8 +14,51 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (planned, no code yet) · branch 
-`docs/coherence-fixes` (documentation only, committed, PR to open)
+**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 in progress) · branch 
+`feature/core-infrastructure` (not pushed)
+
+### Work in progress — Core + Infrastructure split (ADR-011)
+
+Resume here. Steps of the refactor, each ending green (0 warnings, all 
+tests passing):
+
+| Step | State |
+|---|---|
+| 0 · branch + baseline (220 tests) | ✅ |
+| 1 · `SoundRevival.Repository` → `SoundRevival.Infrastructure` | ✅ `972633c` |
+| 2 · `SoundRevival.Core` created; `Entities/`, `Exceptions/`, `Interfaces/` moved | ✅ `6e0cb9f` |
+| 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException`; no EF/Npgsql left in `AuthService` or its tests | ✅ `54548c6` |
+| 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`), injected in `AuthService`, registered as **singleton** in `Program.cs`; `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ |
+| **4 · move `AuthService`, `ListingService` to Core (`JwtTokenService`, `JwtSettings` stay)** | ⬜ **next** |
+| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` | ⬜ |
+| 6 · `Program.cs` registrations; optional `AddInfrastructure()` (closes A5) | ⬜ |
+| 7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime) | ⬜ |
+| 8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5) | ⬜ |
+
+**Next action: step 4** (move `AuthService` and `ListingService` to 
+Core). Baseline: 0 warnings, 223 tests green.
+
+Notes collected during the refactor:
+- Migration files keep the old CLR names as strings 
+  (`"SoundRevival.Repository.Entities.User"`) on purpose; checked in 
+  step 7 with `has-pending-model-changes`.
+- The `23505` filter now lives in `UserRepository`: covered only by the 
+  phase 2 integration tests (T4), not by unit tests.
+- Optional test hardening: `RegisterAsync_OtherSaveError_IsNotTranslated` 
+  uses `InvalidOperationException`, which `AuthService` also throws 
+  itself; assert the message or use a type the service never throws.
+- Found in 3e review, to decide (proposed debt row, SEC): BCrypt uses 
+  only the first 72 bytes of a password, while `RegisterRequestDto` 
+  allows 128 characters (up to more bytes in UTF-8): longer passwords 
+  are silently truncated. Options: lower the DTO limit, or a byte check 
+  in the hasher.
+- Trailing whitespace and unused `using`s left in touched files: 
+  `dotnet format` handles them in the build-quality item (B3).
+- Use `dotnet test` without `--no-build` after a change: with a failed 
+  build, `--no-build` runs the old test assembly. Save all in Visual 
+  Studio before running commands from the terminal.
+
+### Coherence check (2026-11-23)
 
 On 2026-11-23 the whole project was checked for coherence (docs vs. 
 code, phase vs. phase, current practice). Outcome: docs fixed, phase 2 
@@ -253,7 +296,6 @@ being touched. Remove a row when fixed.
 | ID | Issue | Where | Rule |
 |---|---|---|---|
 | A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name, and services can reference EF Core/Npgsql (`AuthService` does). Decided: split into Core + Infrastructure, first item of phase 2 | solution | ADR-011 |
-| A10 🟡 | `AuthService` calls the BCrypt library directly (open point of ADR-011: keep it, or `IPasswordHasher` in Core); it also sets `CreatedAt` with `DateTime.UtcNow` (A7). Decide during the A1 refactor | `AuthService` | ARCH-5 |
 | A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service (phase 3 housekeeping; the query type belongs in Core, ADR-011) | `IListingRepository`, `ListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
 | A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
@@ -281,21 +323,16 @@ being touched. Remove a row when fixed.
 ## 5. Next steps (phase 2)
 
 Phase 1 is done: steps 1–10 in §3, merged via PR #3. Phase 2 is 
-planned (items in branch order in 
-[09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton)); 
-no phase 2 code yet.
+in progress (items in branch order in 
+[09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton)). 
+The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pull/5)).
 
-1. **Close the docs branch**: review, commit and merge 
-   `docs/coherence-fixes` (coherence fixes, ADR-011, ADR-012, revised 
-   roadmap and learning path).
-2. **First item — Core + Infrastructure split** (ADR-011, A1), on 
-   `feature/core-infrastructure`. Study 
-   [LEARNING-PATH 2.0](LEARNING-PATH.md#20-dependency-inversion-core-and-infrastructure-) 
-   first. Plan the step together; decide A10 (BCrypt) there. Safety 
-   net: 220 tests green before and after every move.
-3. Then build quality (B1–B3, B6) → test platform (T5) → CI → 
+1. **Finish the Core + Infrastructure split** (ADR-011, A1) on 
+   `feature/core-infrastructure`: resume from "Work in progress" in §1 
+   (step 3e tests, then steps 4–8), then PR into `main`.
+2. Then build quality (B1–B3, B6) → test platform (T5) → CI → 
    integration tests (T4), so every later PR is checked automatically.
-4. `14-DevOps.md` and the deployment ADR come right before the deploy 
+3. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
@@ -310,7 +347,7 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-23 — project-wide coherence check; docs fixed; 
-ADR-011 and ADR-012 accepted; phase 2 plan revised (all on 
-`docs/coherence-fixes`, committed, PR to open). Next: merge the docs 
-branch, then the Core + Infrastructure split.*
+*Last updated: 2026-11-24 — PR #5 (coherence check, ADR-011, ADR-012) 
+merged; Core + Infrastructure split steps 0–3 committed on 
+`feature/core-infrastructure`, plus step 3e (password hasher, A10 
+closed, 223 tests). Next: step 4 in §1.*

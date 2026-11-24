@@ -11,10 +11,13 @@ namespace SoundRevival.Infrastructure.Services
         private readonly IUserRepository _repository;
         private readonly ITokenService _tokenService;
 
-        public AuthService(IUserRepository repo, ITokenService tokenService)
+        private readonly IPasswordHasher _passwordHasher;
+
+        public AuthService(IUserRepository repo, ITokenService tokenService, IPasswordHasher passwordHasher)
         {
             _repository = repo;
             _tokenService = tokenService;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -32,7 +35,7 @@ namespace SoundRevival.Infrastructure.Services
             {
                 Id = Guid.NewGuid(),
                 Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                PasswordHash = _passwordHasher.HashPassword(request.Password),
                 DisplayName = request.DisplayName.Trim(),
                 Role = Roles.User,
                 CreatedAt = DateTime.UtcNow
@@ -66,7 +69,7 @@ namespace SoundRevival.Infrastructure.Services
 
             var user = await _repository.FindUserByEmail(email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
             {
                 throw new InvalidCredentialsException("Invalid email or password.");
 

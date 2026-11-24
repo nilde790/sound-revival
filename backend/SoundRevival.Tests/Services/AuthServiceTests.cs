@@ -14,6 +14,7 @@ namespace SoundRevival.Tests.Services
         // so these fields are fresh (and the mock has no leftover setups) each time.
         private readonly Mock<IUserRepository> _userRepo = new();
         private readonly Mock<ITokenService> _tokenService = new();
+        private readonly Mock<IPasswordHasher> _passwordHasher = new();
         private readonly AuthService _authService;
 
         private const string FakeToken = "fake-token";
@@ -22,15 +23,18 @@ namespace SoundRevival.Tests.Services
         {
             // Token creation is JwtTokenService's job (tested separately): here it only has to return something.
             _tokenService.Setup(t => t.GenerateToken(It.IsAny<User>())).Returns(FakeToken);
+            _passwordHasher.Setup(p => p.HashPassword(It.IsAny<string>())).Returns<string>(password => FakeHash(password));
+            _passwordHasher.Setup(p => p.VerifyPassword(It.IsAny<string>(),  It.IsAny<string>())).Returns<string, string>((password, hash) => hash == FakeHash(password));
 
-            _authService = new AuthService(_userRepo.Object, _tokenService.Object);
+            _authService = new AuthService(_userRepo.Object, _tokenService.Object, _passwordHasher.Object);
         }
+        private static string FakeHash(string password) => "hashed:" + password;
 
         private static User CreateUser(string email, string password) => new()
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
+            PasswordHash = FakeHash(password)   
         };
 
         // ---------- LoginAsync ----------
@@ -109,11 +113,12 @@ namespace SoundRevival.Tests.Services
 
             var result = await _authService.RegisterAsync(new RegisterRequestDto { Email = "  New@Gmail.COM ", Password = "secret" });
 
+
             Assert.NotNull(savedUser);
             Assert.Equal("new@gmail.com", savedUser!.Email);
             Assert.Equal(Roles.User, savedUser.Role);
             Assert.NotEqual("secret", savedUser.PasswordHash);
-            Assert.True(BCrypt.Net.BCrypt.Verify("secret", savedUser.PasswordHash));
+            Assert.Equal(FakeHash("secret"), savedUser.PasswordHash);
             Assert.Equal(savedUser.Id, result.UserId);
             Assert.Equal(FakeToken, result.Token);
             _tokenService.Verify(t => t.GenerateToken(savedUser), Times.Once);
