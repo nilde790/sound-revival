@@ -11,11 +11,11 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <!-- Direct pin: fixes NU1903 (GHSA-v5pm-xwqc-g5wc) in the transitive version -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <!-- Needed by `dotnet ef` in the startup project; database provider lives in Infrastructure -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>

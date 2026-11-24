@@ -31,11 +31,11 @@ tests passing):
 | 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`), injected in `AuthService`, registered as **singleton** in `Program.cs`; `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ |
 | 4 · move `AuthService`, `ListingService` to `Core/Services` (`JwtTokenService`, `JwtSettings`, `BCryptPasswordHasher` stay); Core references only Dto | ✅ |
 | 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ |
-| **6 · `Program.cs` registrations; optional `AddInfrastructure()` (closes A5)** | ⬜ **next** |
-| 7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime) | ⬜ |
+| 6 · `Infrastructure/DependencyInjection.cs` → `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped (infrastructure / core / web); Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ |
+| **7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime)** | ⬜ **next** |
 | 8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5) | ⬜ |
 
-**Next action: step 6** (`Program.cs` registrations). Baseline: 0 
+**Next action: step 7** (full check, including runtime DI). Baseline: 0 
 warnings, 223 tests green. Docs still naming `SoundRevival.Tests` 
 (06-Architecture, 09-Roadmap, 10-Testing, ADR-011, sections of this 
 file describing past work) are updated in step 8.
@@ -304,7 +304,6 @@ being touched. Remove a row when fixed.
 | A1 🟠 | `SoundRevival.Repository` also holds entities, services, DbContext: misleading name, and services can reference EF Core/Npgsql (`AuthService` does). Decided: split into Core + Infrastructure, first item of phase 2 | solution | ADR-011 |
 | A2 🟠 | Repository interface takes HTTP DTOs; since step 9 the repository also switches on API strings (`"price_asc"`). Fix: a repository query type (e.g. `ListingQuery` + `ListingSort` enum) mapped by the service (phase 3 housekeeping; the query type belongs in Core, ADR-011) | `IListingRepository`, `ListingRepository` | ARCH-6 |
 | A4 🟡 | Per-repository `SaveChangesAsync` returns an unchecked `bool` and hides the shared Unit of Work | repositories, `AuthService` | ARCH-4, ERR-5 |
-| A5 🟡 | `Program.cs` references Npgsql directly (registration extension method would be cleaner) | `Program.cs` | CONSIDER |
 | A7 🟡 | `ListingService` sets `UpdatedAt` from the injected `TimeProvider`, but `CreatedAt` still comes from entity initializers (`DateTime.UtcNow` in `Listing`, `User`), `AuthService` sets `CreatedAt` and `JwtTokenService` the expiry with `DateTime.UtcNow`: not one place, not testable (phase 3 housekeeping) | entities, `AuthService`, `JwtTokenService` | DATA-4, TEST-5 |
 | A9 🟡 | `AppException` responses (404/403/400) lack the `type` and `traceId` fields the framework adds to the 500: two slightly different `ProblemDetails` shapes. Option: write them with `IProblemDetailsService` (phase 3 housekeeping) | `GlobalExceptionHandler` | ERR-4 |
 | A8 🟡 | No `CancellationToken` propagation (phase 3 housekeeping) | repositories, services, controllers | ASYNC-2 |
@@ -356,5 +355,6 @@ standards.
 *Last updated: 2026-11-24 — PR #5 (coherence check, ADR-011, ADR-012) 
 merged; Core + Infrastructure split steps 0–3 committed on 
 `feature/core-infrastructure`, plus step 3e (password hasher, A10 
-closed, 223 tests) step 4 (services in Core) and step 5 (`SoundRevival.UnitTests`). 
-Next: step 6 in §1.*
+closed, 223 tests), step 4 (services in Core), step 5 
+(`SoundRevival.UnitTests`); step 6 (`AddInfrastructure`, A5 closed) 
+uncommitted. Next: step 7 in §1.*

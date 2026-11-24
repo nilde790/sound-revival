@@ -1,48 +1,31 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SoundRevival.Infrastructure;
-using SoundRevival.Core.Exceptions;
 using SoundRevival.Core.Interfaces;
 using SoundRevival.Core.Services;
-using SoundRevival.Infrastructure.Repository;
-using SoundRevival.Infrastructure.Services;
 using SoundRevival.Infrastructure.Settings;
 using SoundRevival.WebApi.ExceptionHandling;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Add services to the container.
+// Infrastructure: database, repositories, token service, password hasher, JwtSettings.
+builder.Services.AddInfrastructure(builder.Configuration);
 
+// Core services.
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddSingleton(TimeProvider.System);
+
+// Web: error handling, controllers, OpenAPI, authentication.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.Services.AddScoped<IAuthService,AuthService>();
-builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddScoped<IUserRepository,UserRepository>();   
-builder.Services.AddScoped<IListingRepository, ListingRepository>();
-builder.Services.AddScoped<IListingService, ListingService>();
-
-builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
-builder.Services.AddSingleton(TimeProvider.System);
-
 builder.Services.AddControllers();
-
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
-builder.Services.AddOptions<JwtSettings>()
-    .Bind(builder.Configuration
-    .GetSection("Jwt"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
@@ -66,6 +49,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key))
         };
     });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
