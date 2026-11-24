@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 
 
-namespace SoundRevival.Tests.Validation
+namespace SoundRevival.UnitTests.Validation
 {
     public static class ValidationHelper
     {

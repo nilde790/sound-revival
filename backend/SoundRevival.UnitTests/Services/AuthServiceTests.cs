@@ -6,7 +6,7 @@ using SoundRevival.Dto.Constants;
 using SoundRevival.Core.Interfaces;
 using SoundRevival.Core.Services;
 
-namespace SoundRevival.Tests.Services
+namespace SoundRevival.UnitTests.Services
 {
     public class AuthServiceTests
     {

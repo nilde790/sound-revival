@@ -1,6 +1,6 @@
 using SoundRevival.Dto.Listings;
 
-namespace SoundRevival.Tests.Validation
+namespace SoundRevival.UnitTests.Validation
 {
     // Mirrors CreateListingRequestDtoTests: the two DTOs duplicate the same rules
     // on purpose (debt C12), so a rule changed in only one of them breaks a test here.

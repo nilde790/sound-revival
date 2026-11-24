@@ -1,7 +1,7 @@
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
 
-namespace SoundRevival.Tests.Validation
+namespace SoundRevival.UnitTests.Validation
 {
     public class UpdateListingStatusRequestDtoTests
     {

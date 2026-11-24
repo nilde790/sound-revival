@@ -1,6 +1,6 @@
 ﻿using SoundRevival.Dto.Validation;
 
-namespace SoundRevival.Tests.Validation
+namespace SoundRevival.UnitTests.Validation
 {
     public class MaxDecimalPlacesAttributeTests
     {

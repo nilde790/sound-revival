@@ -1,6 +1,6 @@
 ﻿using SoundRevival.Infrastructure.Services;
 
-namespace SoundRevival.Tests.Services
+namespace SoundRevival.UnitTests.Services
 {
     public class BCryptPasswordHasherTests
     {

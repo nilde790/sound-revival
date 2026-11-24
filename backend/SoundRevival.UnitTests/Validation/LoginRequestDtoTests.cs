@@ -1,6 +1,6 @@
 using SoundRevival.Dto.Auth;
 
-namespace SoundRevival.Tests.Validation
+namespace SoundRevival.UnitTests.Validation
 {
     public class LoginRequestDtoTests
     {

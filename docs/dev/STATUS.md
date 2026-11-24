@@ -30,13 +30,15 @@ tests passing):
 | 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException`; no EF/Npgsql left in `AuthService` or its tests | ✅ `54548c6` |
 | 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`), injected in `AuthService`, registered as **singleton** in `Program.cs`; `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ |
 | 4 · move `AuthService`, `ListingService` to `Core/Services` (`JwtTokenService`, `JwtSettings`, `BCryptPasswordHasher` stay); Core references only Dto | ✅ |
-| **5 · `SoundRevival.Tests` → `SoundRevival.UnitTests`** | ⬜ **next** |
-| 6 · `Program.cs` registrations; optional `AddInfrastructure()` (closes A5) | ⬜ |
+| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ |
+| **6 · `Program.cs` registrations; optional `AddInfrastructure()` (closes A5)** | ⬜ **next** |
 | 7 · full check: build, tests, `dotnet ef migrations list` and `dotnet ef migrations has-pending-model-changes` (project `SoundRevival.Infrastructure`), manual register/login with Postman (DI registrations are only checked at runtime) | ⬜ |
 | 8 · docs: 06-Architecture (backend), CLAUDE.md (commands, layers), README, 10-Testing, ENGINEERING-STANDARDS (ARCH-7 → "interface + registration with the right lifetime", not always `AddScoped`), STATUS (A1, A10, A5) | ⬜ |
 
-**Next action: step 5** (rename the test project). Baseline: 0 
-warnings, 223 tests green.
+**Next action: step 6** (`Program.cs` registrations). Baseline: 0 
+warnings, 223 tests green. Docs still naming `SoundRevival.Tests` 
+(06-Architecture, 09-Roadmap, 10-Testing, ADR-011, sections of this 
+file describing past work) are updated in step 8.
 
 Notes collected during the refactor:
 - Migration files keep the old CLR names as strings 
@@ -354,4 +356,5 @@ standards.
 *Last updated: 2026-11-24 — PR #5 (coherence check, ADR-011, ADR-012) 
 merged; Core + Infrastructure split steps 0–3 committed on 
 `feature/core-infrastructure`, plus step 3e (password hasher, A10 
-closed, 223 tests) and step 4 (services in Core). Next: step 5 in §1.*
+closed, 223 tests) step 4 (services in Core) and step 5 (`SoundRevival.UnitTests`). 
+Next: step 6 in §1.*

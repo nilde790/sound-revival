@@ -8,7 +8,7 @@ using SoundRevival.Dto.Constants;
 using SoundRevival.Infrastructure.Services;
 using SoundRevival.Infrastructure.Settings;
 
-namespace SoundRevival.Tests.Services
+namespace SoundRevival.UnitTests.Services
 {
     public class JwtTokenServiceTests
     {
