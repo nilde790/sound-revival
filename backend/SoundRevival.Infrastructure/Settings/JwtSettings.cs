@@ -1,0 +1,18 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SoundRevival.Infrastructure.Settings
+{
+    public class JwtSettings
+    {
+        [Required]
+        [MinLength(32)]
+        public required string Key {  get; set; }
+        [Required]
+        public required string Issuer { get; set; }
+        [Required]
+        public required string Audience {  get; set; }
+        [Range(1, 1440)]
+        public required int ExpiryMinutes { get; set; }
+
+    }
+}

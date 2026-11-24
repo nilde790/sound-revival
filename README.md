@@ -51,12 +51,17 @@ flowchart LR
 ```
 
 The backend is a multi-project solution with compiler-enforced layers 
-([ADR-004](docs/adr/ADR-004-Multi-Project-Layered-Backend.md)):
+([ADR-004](docs/adr/ADR-004-Multi-Project-Layered-Backend.md), 
+[ADR-011](docs/adr/ADR-011-Core-Infrastructure-Split.md)):
 
 ```
-Controller (WebApi) → Service (business rules) → Repository (EF Core) → PostgreSQL
+Controller (WebApi) → Service (Core) → Repository (Infrastructure, EF Core) → PostgreSQL
                          ↑ depends on interfaces only; DTOs at the boundary
 ```
+
+`Core` holds entities, interfaces, business rules and exceptions, with 
+no EF Core or BCrypt dependency; `Infrastructure` implements its 
+interfaces (database, JWT, password hashing).
 
 Details: [docs/06-Architecture.md](docs/06-Architecture.md) · API 
 contract: [docs/07-API-Design.md](docs/07-API-Design.md).
@@ -135,7 +140,7 @@ Create `backend/SoundRevival.WebApi/appsettings.Development.json`
 cd backend
 
 # Apply migrations
-dotnet ef database update --project SoundRevival.Repository --startup-project SoundRevival.WebApi
+dotnet ef database update --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi
 
 # Run the API (http://localhost:5150)
 dotnet run --project SoundRevival.WebApi

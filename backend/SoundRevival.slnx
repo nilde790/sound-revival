@@ -1,6 +1,7 @@
 <Solution>
+  <Project Path="SoundRevival.Core/SoundRevival.Core.csproj" />
   <Project Path="SoundRevival.Dto/SoundRevival.Dto.csproj" />
-  <Project Path="SoundRevival.Repository/SoundRevival.Repository.csproj" />
-  <Project Path="SoundRevival.Tests/SoundRevival.Tests.csproj" />
+  <Project Path="SoundRevival.Infrastructure/SoundRevival.Infrastructure.csproj" />
+  <Project Path="SoundRevival.UnitTests/SoundRevival.UnitTests.csproj" />
   <Project Path="SoundRevival.WebApi/SoundRevival.WebApi.csproj" />
 </Solution>

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using SoundRevival.Repository.Exceptions;
+using SoundRevival.Core.Exceptions;
 
 namespace SoundRevival.WebApi.ExceptionHandling
 {

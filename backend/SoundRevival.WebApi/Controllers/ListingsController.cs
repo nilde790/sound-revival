@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SoundRevival.Dto.Common;
 using SoundRevival.Dto.Constants;
 using SoundRevival.Dto.Listings;
-using SoundRevival.Repository.Interfaces;
+using SoundRevival.Core.Interfaces;
 using SoundRevival.WebApi.Extensions;
 
 namespace SoundRevival.WebApi.Controllers

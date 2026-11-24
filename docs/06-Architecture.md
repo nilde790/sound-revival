@@ -66,35 +66,57 @@ flowchart LR
   - **`SoundRevival.WebApi`** — Controllers, request/response handling, 
     DI registration and authentication middleware (`Program.cs`); no 
     business logic
-  - **`SoundRevival.Repository`** — domain, business logic and data access:
-    - `Entities/` — EF Core entity classes (`User`, `Listing`, `Image`)
-    - `AppDbContext.cs` + `Migrations/` — EF Core mapping and schema history
-    - `Interfaces/` — contracts for both repositories and services 
-      (e.g. `IUserRepository`, `IAuthService`)
-    - `Repository/` — repository implementations: pure EF Core data 
-      access, no business rules (e.g. `UserRepository`)
+  - **`SoundRevival.Core`** — domain and business logic, with no 
+    EF Core, Npgsql or BCrypt dependency 
+    ([ADR-011](adr/ADR-011-Core-Infrastructure-Split.md)):
+    - `Entities/` — entity classes (`User`, `Listing`, `Image`), plain C#
+    - `Interfaces/` — contracts for repositories, services and 
+      infrastructure services (e.g. `IUserRepository`, `IAuthService`, 
+      `ITokenService`, `IPasswordHasher`)
     - `Services/` — service implementations containing business logic 
       (e.g. "a user can only edit their own listing", "max 5 images per 
-      listing"); they depend on repository **interfaces**, never on 
-      `AppDbContext` directly
+      listing"); they depend only on **interfaces**
+    - `Exceptions/` — custom exceptions mapped to `ProblemDetails` 
+      ([ADR-009](adr/ADR-009-Error-Handling.md)), including 
+      `UniqueConstraintViolationException`, which repositories throw so 
+      services never see a database error type
+  - **`SoundRevival.Infrastructure`** — implementations of Core's 
+    interfaces that talk to the outside world:
+    - `AppDbContext.cs` + `Migrations/` — EF Core mapping and schema history
+    - `Repository/` — repository implementations: pure EF Core data 
+      access, no business rules (e.g. `UserRepository`)
+    - `Services/` — `JwtTokenService`, `BCryptPasswordHasher`
+    - `Settings/` — `JwtSettings` (validated options)
+    - `DependencyInjection.cs` — `AddInfrastructure(configuration)`: 
+      registers DbContext, repositories, token service, hasher and 
+      options, so `Program.cs` needs no EF Core or provider details
   - **`SoundRevival.Dto`** — Data Transfer Objects, shaping data 
     sent to/from the API, decoupled from internal database entities
-  - **`SoundRevival.Tests`** — unit tests on services, with repository 
-    interfaces mocked (Moq), and validation tests on request DTOs
-- **Dependency direction**: WebApi → Repository (via interfaces) + Dto; 
-  Repository → Dto; Dto depends on nothing. Controllers never access the 
-  database directly, and entities never leave the Repository project 
-  (controllers only see DTOs)
+  - **`SoundRevival.UnitTests`** — unit tests on services, with 
+    interfaces mocked (Moq), tests on `JwtTokenService` and 
+    `BCryptPasswordHasher`, and validation tests on request DTOs
+- **Dependency direction**: WebApi → Core + Infrastructure + Dto 
+  (WebApi is the composition root: it references Infrastructure only to 
+  call `AddInfrastructure`); Infrastructure → Core + Dto; Core → Dto; 
+  Dto depends on nothing. Infrastructure → Dto exists only because 
+  repositories receive filter DTOs (debt A2 in `dev/STATUS.md`). 
+  Controllers never access the database directly, and entities never 
+  reach the API (controllers only see DTOs)
+- **Service lifetimes**: services, repositories and `JwtTokenService` 
+  are scoped (one per request, like `AppDbContext`); stateless helpers 
+  (`IPasswordHasher`, `TimeProvider`) are singletons. In Development the 
+  default host validates the graph on build (`ValidateOnBuild`, 
+  `ValidateScopes`), so a wrong lifetime fails at startup
 
 ```
 Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ──> PostgreSQL
- (WebApi)        (Services/)      (Repository/)
+ (WebApi)      (Core/Services)  (Infrastructure/Repository)
 ```
   
 - **Authentication**: token-based (JWT, HMAC-SHA256) — the backend 
   issues a token on login/register, the frontend attaches it to 
   subsequent requests (`Authorization: Bearer <token>`). Passwords are 
-  hashed with BCrypt. Token claims: `sub` (user id), `email`, and 
+  hashed with BCrypt behind `IPasswordHasher`. Token claims: `sub` (user id), `email`, and 
   `ClaimTypes.Role`. Since `MapInboundClaims` is left at its default, 
   `sub` is exposed in controllers as `ClaimTypes.NameIdentifier`. 
   Planned (phase 3, [ADR-012](adr/ADR-012-Browser-Token-Storage.md)): a 

@@ -49,8 +49,8 @@ docker compose -f ../docker-compose.yml up -d     # PostgreSQL 16 on :5432
 dotnet build SoundRevival.slnx                    # must stay warning-free
 dotnet test SoundRevival.slnx
 dotnet run --project SoundRevival.WebApi          # http://localhost:5150
-dotnet ef migrations add <Name> --project SoundRevival.Repository --startup-project SoundRevival.WebApi
-dotnet ef database update      --project SoundRevival.Repository --startup-project SoundRevival.WebApi
+dotnet ef migrations add <Name> --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi
+dotnet ef database update      --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi
 ```
 
 `SoundRevival.WebApi/appsettings.Development.json` (gitignored) holds the 
@@ -60,8 +60,12 @@ values**. Manual checks: `SoundRevival.WebApi.http` / Postman; DB: DBeaver.
 ## Non-negotiables (details in the linked docs)
 
 - Layers: Controller → Service → Repository → `AppDbContext`; DTOs at the 
-  boundary, never entities; services depend on interfaces; every new 
-  service/repository gets an interface + `AddScoped` (06-Architecture, 
+  boundary, never entities; services depend on interfaces. Projects 
+  (ADR-011): `Core` (entities, interfaces, services, exceptions; no 
+  EF Core/BCrypt) ← `Infrastructure` (DbContext, migrations, 
+  repositories, JWT, hashing; registered in `AddInfrastructure()`) ← 
+  `WebApi` (composition root). Every new service/repository gets an 
+  interface + registration with the right lifetime (06-Architecture, 
   ARCH rules).
 - Schema changes: Code First migrations only; never edit an applied one.
 - Errors: custom exceptions + global `IExceptionHandler` → 

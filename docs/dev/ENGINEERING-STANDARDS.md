@@ -43,8 +43,14 @@ See [`../06-Architecture.md`](../06-Architecture.md) and ADR-004.
 - **ARCH-6 (SHOULD) Don't leak contracts across layers**: repositories 
   take simple parameters or an inner-layer query object, not HTTP DTOs 
   (existing deviation: A2 — don't copy it).
-- **ARCH-7 (MUST)** Every new service/repository has an interface and an 
-  `AddScoped` registration.
+- **ARCH-7 (MUST)** Every new service/repository has an interface and a 
+  registration with the right lifetime: **scoped** for anything that 
+  uses `AppDbContext` or per-request state (services, repositories); 
+  **singleton** only for stateless, thread-safe helpers 
+  (`IPasswordHasher`, `TimeProvider`); never a singleton that depends on 
+  a scoped service (captive dependency). Infrastructure implementations 
+  are registered in `AddInfrastructure()`, Core services in 
+  `Program.cs`.
 - **ARCH-8 (CONSIDER) Keep entities simple** until real state transitions 
   (v2 `reserved`) justify domain methods like `listing.MarkAsSold()`.
 
@@ -155,8 +161,10 @@ See [`../05-Database.md`](../05-Database.md).
   `[Authorize(Roles = "admin")]` or `[AllowAnonymous]`, matching 07.
 - **SEC-2 (MUST)** Authorization in the service, with the user id from 
   the claims (`ClaimTypes.NameIdentifier`), never from the client.
-- **SEC-3 (MUST)** Passwords only hashed with BCrypt; passwords and 
-  hashes never logged or returned.
+- **SEC-3 (MUST)** Passwords only hashed with BCrypt, through 
+  `IPasswordHasher` (never the library in Core); passwords and hashes 
+  never logged or returned. BCrypt reads only the first 72 bytes: input 
+  limits must not allow longer passwords (open deviation: C16).
 - **SEC-4 (MUST)** No secrets in git: local gitignored settings or 
   `dotnet user-secrets`; environment variables when deployed.
 - **SEC-5 (SHOULD)** Rate limit login/register (`AddRateLimiter`) (C5).
@@ -252,7 +260,7 @@ layer. Report as `[RULE-ID] (level) what → why → concept`.
 
 - **Layers**: thin controller (ARCH-1) · rules and ownership in service 
   (ARCH-2, SEC-2) · repository without business logic (ARCH-3) · one save 
-  per use case (ARCH-4) · interface + `AddScoped` (ARCH-7)
+  per use case (ARCH-4) · interface + right lifetime (ARCH-7)
 - **Input**: constrained and bounded (VAL-1, VAL-2) · normalized 
   (VAL-3) · allow-lists incl. filters (VAL-4) · `decimal` money (VAL-5) · 
   escaped LIKE (VAL-6) · no owner/role/status from body (VAL-7) · 
