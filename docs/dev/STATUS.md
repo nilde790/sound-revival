@@ -14,49 +14,20 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 done, PR pending) · 
-branch `feature/core-infrastructure` (not pushed)
+**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 done) · on `main`, 
+no feature branch open
 
-### Resume here — open the PR for the Core + Infrastructure split
+### Resume here — item 2: build quality
 
-The split (ADR-011) is **complete on the branch**: code, tests and docs. 
-Baseline: 0 warnings, 223/223 tests green, app checked end to end 
-(2026-11-24). If `git status` still shows the step 8 doc changes, 
-commit them first (`docs: describe Core + Infrastructure split`).
+Item 1 (Core + Infrastructure split, ADR-011) is merged: 
+[PR #6](https://github.com/nilde790/sound-revival/pull/6) (merge commit 
+`729ad48`, 2026-11-24). Merged branches deleted locally and on `origin` 
+(2026-11-25).
 
-**Next action**: push `feature/core-infrastructure` and open the PR into 
-`main` (only when the developer asks). Suggested PR body: what moved 
-(table below), A1/A5/A10 closed, how it was verified (step 7), the 
-ADR-011 deviation (Infrastructure → Dto, A2). After the merge: delete 
-the branch, update this section and §3, start item 2 (build quality).
-
-| Step | State |
-|---|---|
-| 0 · branch + baseline (220 tests) | ✅ |
-| 1 · `SoundRevival.Repository` → `SoundRevival.Infrastructure` | ✅ `972633c` |
-| 2 · `SoundRevival.Core` created; `Entities/`, `Exceptions/`, `Interfaces/` moved | ✅ `6e0cb9f` |
-| 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException` | ✅ `54548c6` |
-| 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`, singleton); `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ `a41da96` |
-| 4 · `AuthService`, `ListingService` moved to `Core/Services`; Core references only Dto | ✅ `60f241d` |
-| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ `fecf933` |
-| 6 · `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped; Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ `474c4eb` |
-| 7 · full check (2026-11-24): build 0 warnings, 223 tests; `has-pending-model-changes` → no changes; `migrations list` → `InitialCreate` applied; app starts on https :7196; curl: register 200, duplicate 400, login 200, wrong password 401, create listing 201 + `Location` | ✅ `69ce4fc` |
-| 8 · docs: 06-Architecture (backend projects, dependencies, lifetimes), CLAUDE.md and README (EF commands, layers), 05-Database, 10-Testing, 09-Roadmap (item ✅), ADR-011 (implementation notes), ENGINEERING-STANDARDS (ARCH-7 lifetimes, SEC-3 hasher + 72 bytes), STATUS (A1 closed, C16 added) | ✅ |
-
-Notes from the refactor (still valid):
-- Migration files keep the old CLR names as strings 
-  (`"SoundRevival.Repository.Entities.User"`) on purpose; harmless, 
-  checked with `has-pending-model-changes`.
-- The `23505` filter lives in `UserRepository`: covered only by the 
-  phase 2 integration tests (T4), not by unit tests.
-- Test data left in the local DB by step 7 (user `step7-…@example.test`, 
-  listing "Step 7 test guitar"): delete when convenient.
-- Trailing whitespace and unused `using`s left in touched files: 
-  `dotnet format` handles them in the build-quality item (B3).
-- Use `dotnet test` without `--no-build` after a change: with a failed 
-  build, `--no-build` runs the old test assembly. Save all in Visual 
-  Studio before running commands from the terminal.
-- Docker Desktop must be running before `docker compose up -d`.
+**Next action**: create `feature/<name>` for build quality and plan it 
+step by step: B6 (`global.json`, patch updates), B2 (Central Package 
+Management), B3 (`.editorconfig`, `dotnet format`), B1 
+(`TreatWarningsAsErrors`). Order to be agreed at the start of the item.
 
 ### Coherence check (2026-11-23)
 
@@ -89,7 +60,7 @@ Phase 1 — Backend foundations ✅ closed on 2026-11-23:
 
 ## 3. What's built
 
-Everything below is on `main`. 220 unit tests, all green; build 
+Everything below is on `main`. 223 unit tests, all green; build 
 warning-free.
 
 **Phase 0** (PR #1): entities `User`/`Listing`/`Image`, `AppDbContext`, 
@@ -264,6 +235,38 @@ warning-free.
 - `Brand` is deliberately absent from the DTOs: the column arrives with 
   the phase 3 migration (S1).
 
+**Phase 2, item 1 — Core + Infrastructure split** (ADR-011, 
+[PR #6](https://github.com/nilde790/sound-revival/pull/6), merged 
+2026-11-24, merge commit `729ad48`): A1, A5, A10 closed.
+
+| Step | State |
+|---|---|
+| 0 · branch + baseline (220 tests) | ✅ |
+| 1 · `SoundRevival.Repository` → `SoundRevival.Infrastructure` | ✅ `972633c` |
+| 2 · `SoundRevival.Core` created; `Entities/`, `Exceptions/`, `Interfaces/` moved | ✅ `6e0cb9f` |
+| 3 · `23505` translated in `UserRepository` → `UniqueConstraintViolationException` (Core, not an `AppException`); `AuthService` catches it and throws `BusinessRuleException` | ✅ `54548c6` |
+| 3e · A10: `IPasswordHasher` (Core) + `BCryptPasswordHasher` (Infrastructure, `sealed`, singleton); `AuthServiceTests` use a fake hasher (`FakeHash`), new `BCryptPasswordHasherTests` (223 tests) | ✅ `a41da96` |
+| 4 · `AuthService`, `ListingService` moved to `Core/Services`; Core references only Dto | ✅ `60f241d` |
+| 5 · `SoundRevival.Tests` → `SoundRevival.UnitTests` (folder, `.csproj`, `.slnx`, namespaces) | ✅ `fecf933` |
+| 6 · `AddInfrastructure(services, configuration)` (DbContext + fail-fast connection string, repositories, token service, hasher, `JwtSettings`); `Program.cs` grouped; Npgsql removed from WebApi (A5 closed), `EntityFrameworkCore.Design` stays for `dotnet ef` | ✅ `474c4eb` |
+| 7 · full check (2026-11-24): build 0 warnings, 223 tests; `has-pending-model-changes` → no changes; `migrations list` → `InitialCreate` applied; app starts on https :7196; curl: register 200, duplicate 400, login 200, wrong password 401, create listing 201 + `Location` | ✅ `69ce4fc` |
+| 8 · docs: 06-Architecture (backend projects, dependencies, lifetimes), CLAUDE.md and README (EF commands, layers), 05-Database, 10-Testing, 09-Roadmap (item ✅), ADR-011 (implementation notes), ENGINEERING-STANDARDS (ARCH-7 lifetimes, SEC-3 hasher + 72 bytes), STATUS (A1 closed, C16 added) | ✅ `d1a706f` |
+
+Notes from the refactor (still valid):
+- Migration files keep the old CLR names as strings 
+  (`"SoundRevival.Repository.Entities.User"`) on purpose; harmless, 
+  checked with `has-pending-model-changes`.
+- The `23505` filter lives in `UserRepository`: covered only by the 
+  phase 2 integration tests (T4), not by unit tests.
+- Test data left in the local DB by step 7 (user `step7-…@example.test`, 
+  listing "Step 7 test guitar"): delete when convenient.
+- Trailing whitespace and unused `using`s left in touched files: 
+  `dotnet format` handles them in the build-quality item (B3).
+- Use `dotnet test` without `--no-build` after a change: with a failed 
+  build, `--no-build` runs the old test assembly. Save all in Visual 
+  Studio before running commands from the terminal.
+- Docker Desktop must be running before `docker compose up -d`.
+
 **Baseline before phase 2** (measured 2026-11-23): clean build with 0 
 warnings, 220/220 tests green, no vulnerable packages (transitive 
 included). Not yet clean: 66 whitespace violations from 
@@ -326,17 +329,15 @@ in progress (items in branch order in
 [09-Roadmap.md → Phase 2](../09-Roadmap.md#phase-2--delivery-pipeline-walking-skeleton)). 
 The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pull/5)).
 
-1. **PR for the Core + Infrastructure split** (ADR-011): the work on 
-   `feature/core-infrastructure` is complete; push and open the PR into 
-   `main` (§1).
-2. Then build quality (B1–B3, B6) → test platform (T5) → CI → 
+1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
+2. **Next**: build quality (B1–B3, B6) → test platform (T5) → CI → 
    integration tests (T4), so every later PR is checked automatically.
 3. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
-every few days, merge commit. Delete `feature/CRUDlistings` on GitHub 
-(still on `origin`) and locally once no longer needed.
+every few days, merge commit; delete the branch (local and `origin`) 
+after the merge.
 
 Working split agreed: Claude writes repetitive code/tests and proposes 
 that the developer write each piece that introduces something new.
@@ -346,7 +347,6 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-24 — Core + Infrastructure split complete on 
-`feature/core-infrastructure` (steps 0–8: code, 223 tests, full check, 
-docs); A1, A5, A10 closed; C16 (BCrypt 72-byte limit) added. Next: 
-push and PR into `main` (§1).*
+*Last updated: 2026-11-25 — PR #6 (Core + Infrastructure split) 
+merged into `main`; merged branches deleted. Next: phase 2 item 2, 
+build quality (§1).*
