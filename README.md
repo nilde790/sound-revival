@@ -5,7 +5,7 @@ between private users and small shops — built as a **portfolio case
 study** in professional backend and full-stack engineering.
 
 <!-- Badges go here only when they are real: CI status (phase 2),
-     deployed API docs (phase 2), license. No placeholder badges. -->
+     deployed API docs (phase 2). No placeholder badges. -->
 
 > 🚧 **Work in progress.** Authentication is done; the listings API is 
 > being built (roadmap **Phase 1 — Backend foundations**). What exists 
@@ -175,4 +175,7 @@ guides (status, standards, learning path).
 
 ## 📄 License
 
-[MIT](LICENSE)
+Copyright © 2026 Alessandro. All rights reserved.
+
+The source code is public for portfolio purposes only: you may view it, 
+but no license is granted to use, copy, modify or distribute it.
