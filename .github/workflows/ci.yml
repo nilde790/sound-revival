@@ -30,8 +30,6 @@ jobs:
         with:
           global-json-file: global.json
           dotnet-version: 10.0.x
-          cache: true
-          cache-dependency-path: backend/**/packages.lock.json
 
       - name: Restore (locked)
         run: dotnet restore SoundRevival.slnx --locked-mode
