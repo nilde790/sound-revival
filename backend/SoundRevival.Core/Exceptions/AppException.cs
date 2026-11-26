@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.NetworkInformation;
-using System.Text;
+namespace SoundRevival.Core.Exceptions;
 
-namespace SoundRevival.Core.Exceptions
+public abstract class AppException : Exception
 {
-    public abstract class AppException : Exception
+    public int StatusCode { get; }
+
+    protected AppException(string message, int statusCode) : base(message)
     {
-        public int StatusCode {  get; }
-
-        protected AppException(string message, int statusCode) : base(message) 
-        {
-            StatusCode = statusCode;         
-        }
-
-
+        StatusCode = statusCode;
     }
+
+
 }

@@ -227,17 +227,35 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 
 ## 12. Style and build
 
-- **STYLE-1 (MUST)** Conventions: block-scoped namespaces matching 
-  folders, `_camelCase` readonly fields, constructor injection, 
+- **STYLE-1 (MUST)** Conventions: file-scoped namespaces matching 
+  folders, `_camelCase` private fields (PascalCase for constants and 
+  `static readonly`), constructor injection, 
   `Guid.NewGuid()` in services; current time from an injected 
   `TimeProvider` (`GetUtcNow().UtcDateTime`, registered as 
   `TimeProvider.System`), never `DateTime.UtcNow` in services 
   (remaining uses: debt A7).
-- **STYLE-2 (MUST)** Zero build warnings (enforcement planned: B1).
-- **STYLE-3 (SHOULD)** No unused `using`s, dead or commented-out code; 
-  consistent formatting (`dotnet format`, planned).
+- **STYLE-2 (MUST)** Zero build warnings, enforced: 
+  `TreatWarningsAsErrors`, .NET analyzers at `AnalysisMode` 
+  `Recommended` and `.editorconfig` style rules checked by the build 
+  (`EnforceCodeStyleInBuild`), all in `backend/Directory.Build.props`.
+- **STYLE-3 (MUST)** Formatting and code style follow `.editorconfig`; 
+  `dotnet format --verify-no-changes` passes. No unused `using`s 
+  (IDE0005, a build error), dead or commented-out code.
 - **STYLE-4 (SHOULD)** Domain literals (`"available"`, `"admin"`) 
   centralized as constants, so typos become compile errors.
+- **STYLE-5 (MUST) Suppressions are scoped and justified**: understand a 
+  warning before silencing it. A false positive is suppressed with the 
+  smallest scope (`#pragma warning disable/restore` around the lines, or 
+  an `.editorconfig` section for a folder), with a comment saying why; 
+  never a global `NoWarn` for a rule that is right elsewhere. *Why*: an 
+  analyzer cannot know that a LINQ lambda becomes SQL; its suggested fix 
+  can be a runtime bug (example: `ListingRepository` search).
+- **STYLE-6 (MUST) Dependencies are reproducible**: SDK pinned in 
+  `global.json`, package versions only in `backend/Directory.Packages.props` 
+  (no `Version` in a `.csproj`), tools in `dotnet-tools.json`, and the 
+  `packages.lock.json` files committed together with any package change. 
+  A transitive pin carries a comment with its reason and is removed when 
+  the reason is gone (SEC-7).
 
 ---
 
@@ -247,7 +265,8 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 - [ ] All MUST rules hold; SHOULD deviations are explained
 - [ ] Inputs validated and bounded; every expected failure mapped
 - [ ] Each business rule and failure branch tested; all tests pass
-- [ ] `dotnet build` with zero warnings
+- [ ] `dotnet build` with zero warnings; `dotnet format 
+      --verify-no-changes` clean
 - [ ] Affected living docs (API, schema, architecture) updated; new 
       trade-off decisions recorded as ADRs
 - [ ] Happy path and one error case tried manually (`.http` / Postman)
@@ -279,5 +298,6 @@ layer. Report as `[RULE-ID] (level) what → why → concept`.
 - **API & tests**: 07 updated, right status codes, no entities 
   (API-1..3) · rules asserted, branches covered, naming, no duplicated 
   setup (TEST-1..4) · right test level (TEST-6)
-- **Build**: zero warnings, no dead code, no repeated literals 
-  (STYLE-2..4)
+- **Build**: zero warnings, formatting, no dead code, no repeated 
+  literals (STYLE-2..4) · suppressions scoped and justified (STYLE-5) · 
+  versions centralized, lock files updated (STYLE-6)

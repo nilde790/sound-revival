@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+namespace SoundRevival.Core.Exceptions;
 
-namespace SoundRevival.Core.Exceptions
+public class NotFoundException : AppException
 {
-    public class NotFoundException : AppException
+    public NotFoundException(string message) : base(message, 404)
     {
-        public NotFoundException(string message) : base(message, 404)
-        {
 
-        }
     }
 }

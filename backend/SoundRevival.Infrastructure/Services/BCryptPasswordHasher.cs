@@ -1,17 +1,16 @@
-﻿using SoundRevival.Core.Interfaces;
+using SoundRevival.Core.Interfaces;
 
-namespace SoundRevival.Infrastructure.Services
+namespace SoundRevival.Infrastructure.Services;
+
+public sealed class BCryptPasswordHasher : IPasswordHasher
 {
-    public sealed class BCryptPasswordHasher : IPasswordHasher
+    public string HashPassword(string password)
     {
-        public string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password);
-        }
+        return BCrypt.Net.BCrypt.HashPassword(password);
+    }
 
-        public bool VerifyPassword(string password, string passwordHash)
-        {
-            return BCrypt.Net.BCrypt.Verify(password, passwordHash);      
-        }
+    public bool VerifyPassword(string password, string passwordHash)
+    {
+        return BCrypt.Net.BCrypt.Verify(password, passwordHash);
     }
 }

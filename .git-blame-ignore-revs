@@ -1,0 +1,5 @@
+# Commits that only reformat code: `git blame` and GitHub's blame view skip them.
+# Local setup (once per clone): git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: apply dotnet format
+7f1a6c9ab7b44101b17ed87f2901a8b9cd0966c1

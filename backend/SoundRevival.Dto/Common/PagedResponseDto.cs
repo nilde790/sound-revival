@@ -1,13 +1,12 @@
-﻿namespace SoundRevival.Dto.Common
+namespace SoundRevival.Dto.Common;
+
+public class PagedResponseDto<T>
 {
-    public class PagedResponseDto<T>
-    {
-        public List<T> Data { get; set; } = [];
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalItems { get; set; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalItems / (double)PageSize);
+    public List<T> Data { get; set; } = [];
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalItems { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalItems / (double)PageSize);
 
 
-    }
 }

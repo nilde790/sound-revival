@@ -1,24 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace SoundRevival.Dto.Validation
+namespace SoundRevival.Dto.Validation;
+
+public class MaxDecimalPlacesAttribute : ValidationAttribute
 {
-    public class MaxDecimalPlacesAttribute : ValidationAttribute
+    public int MaxDecimalPlaces { get; }
+
+    public MaxDecimalPlacesAttribute(int maxDecimalPlaces)
     {
-        public int MaxDecimalPlaces { get; }
+        MaxDecimalPlaces = maxDecimalPlaces;
+    }
+    public override bool IsValid(object? value)
+    {
 
-        public MaxDecimalPlacesAttribute(int maxDecimalPlaces)
+        if (value is not decimal number)
         {
-            MaxDecimalPlaces = maxDecimalPlaces;
+            return true;
         }
-        public override bool IsValid(object? value)
-        {
 
-            if (value is not decimal number)
-            {
-                return true;
-            }
-
-            return Math.Round(number, MaxDecimalPlaces) == number;
-        }
+        return Math.Round(number, MaxDecimalPlaces) == number;
     }
 }

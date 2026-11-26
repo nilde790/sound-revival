@@ -1,9 +1,8 @@
-﻿namespace SoundRevival.Core.Interfaces
-{
-    public interface IPasswordHasher
-    {
-        string HashPassword(string password);
+namespace SoundRevival.Core.Interfaces;
 
-        bool VerifyPassword(string password, string passwordHash);
-    }
+public interface IPasswordHasher
+{
+    string HashPassword(string password);
+
+    bool VerifyPassword(string password, string passwordHash);
 }
