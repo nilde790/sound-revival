@@ -7,9 +7,10 @@ study** in professional backend and full-stack engineering.
 <!-- Badges go here only when they are real: CI status (phase 2),
      deployed API docs (phase 2). No placeholder badges. -->
 
-> 🚧 **Work in progress.** Authentication is done; the listings API is 
-> being built (roadmap **Phase 1 — Backend foundations**). What exists 
-> today is tracked in [docs/dev/STATUS.md](docs/dev/STATUS.md).
+> 🚧 **Work in progress.** Authentication and the listings API are done 
+> (roadmap **Phase 1**); the delivery pipeline is being built (**Phase 2**: 
+> build quality, CI, integration tests, deploy). What exists today is 
+> tracked in [docs/dev/STATUS.md](docs/dev/STATUS.md).
 
 ## 🎯 Why this project
 
@@ -171,7 +172,11 @@ guides (status, standards, learning path).
 - How EF Core change tracking makes a generic `Update` method 
   unnecessary ([ADR-007](docs/adr/ADR-007-No-Generic-Update-In-Repositories.md)).
 - How to fix a transitive package vulnerability (NU1903) and a version 
-  conflict with direct, documented pins.
+  conflict with documented pins, and why to remove a pin once its reason 
+  is gone (after a patch update, one would have downgraded a package).
+- How to make a .NET build reproducible and self-enforcing: pinned SDK, 
+  Central Package Management, lock files, `.editorconfig`, warnings as 
+  errors, and checking each guard with a test that must fail.
 
 ## 📄 License
 

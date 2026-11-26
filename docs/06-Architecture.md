@@ -107,6 +107,24 @@ flowchart LR
   (`IPasswordHasher`, `TimeProvider`) are singletons. In Development the 
   default host validates the graph on build (`ValidateOnBuild`, 
   `ValidateScopes`), so a wrong lifetime fails at startup
+- **Build configuration** (reproducible builds, rules STYLE-2, STYLE-3, 
+  STYLE-6):
+  - `global.json` (repo root) — SDK pinned to 11.0.1xx 
+    (`rollForward: latestPatch`); the projects target .NET 10
+  - `dotnet-tools.json` (repo root) — local tools (`dotnet-ef`), 
+    installed with `dotnet tool restore`
+  - `backend/Directory.Build.props` — settings shared by every project: 
+    target framework, nullable, implicit usings, warnings as errors, 
+    analyzers (`Recommended`), code style enforced in build, lock files
+  - `backend/Directory.Packages.props` — Central Package Management: 
+    every package version in one place, with transitive pinning; 
+    `.csproj` files hold only `PackageReference` without `Version`
+  - `packages.lock.json` (one per project) — the full resolved 
+    dependency tree, committed; CI restores in locked mode
+  - `.editorconfig` (repo root) — formatting and code style, checked by 
+    the build and by `dotnet format`; `.gitattributes` normalizes line 
+    endings; `.git-blame-ignore-revs` hides formatting-only commits from 
+    `git blame`
 
 ```
 Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ──> PostgreSQL

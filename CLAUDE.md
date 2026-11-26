@@ -45,8 +45,10 @@ in proportion to the change:
 Windows + PowerShell, Visual Studio. From `backend/`:
 
 ```bash
+dotnet tool restore                               # once per clone: dotnet-ef
 docker compose -f ../docker-compose.yml up -d     # PostgreSQL 16 on :5432
-dotnet build SoundRevival.slnx                    # must stay warning-free
+dotnet build SoundRevival.slnx                    # warnings are errors
+dotnet format SoundRevival.slnx                   # apply .editorconfig (CI: --verify-no-changes)
 dotnet test SoundRevival.slnx
 dotnet run --project SoundRevival.WebApi          # http://localhost:5150
 dotnet ef migrations add <Name> --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi

@@ -91,7 +91,7 @@ Items in branch order:
 | Status | Item | Refs |
 |---|---|---|
 | ✅ | Project structure: split `SoundRevival.Repository` into `Core` + `Infrastructure`; `SoundRevival.Tests` → `SoundRevival.UnitTests`; password hashing behind `IPasswordHasher`; `AddInfrastructure()` (branch `feature/core-infrastructure`) | ADR-011, A1, A5, A10 |
-| ⬜ | Build quality and reproducibility: `global.json` (SDK pin), `Directory.Build.props` (`TreatWarningsAsErrors`, analyzers, `EnforceCodeStyleInBuild`), Central Package Management with transitive pinning, lock files, `.editorconfig` + one formatting-only commit (listed in `.git-blame-ignore-revs`), latest patch versions | B1, B2, B3, B6 |
+| ✅ | Build quality and reproducibility: `global.json` (SDK pin), `Directory.Build.props` (`TreatWarningsAsErrors`, analyzers, `EnforceCodeStyleInBuild`), Central Package Management with transitive pinning, lock files, `.editorconfig` + one formatting-only commit (listed in `.git-blame-ignore-revs`), latest patch versions; `dotnet-ef` as a local tool (branch `feature/build-quality`) | B1, B2, B3, B6 |
 | ⬜ | Test platform: xUnit v3 + Microsoft.Testing.Platform, coverage | T5, 10-Testing |
 | ⬜ | GitHub Actions CI: locked restore, build, format check, unit tests, coverage summary on PRs; least-privilege permissions, actions pinned by commit SHA; Dependabot (NuGet, Actions, Docker), CodeQL, secret scanning; a ruleset on `main` that requires the checks | NFR-9, NFR-10 |
 | ⬜ | Integration tests: `SoundRevival.IntegrationTests` with `WebApplicationFactory` + Testcontainers, data reset between tests, own CI job | T4, 10-Testing |

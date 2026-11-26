@@ -14,20 +14,55 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 1 of 8 done) · on `main`, 
-no feature branch open
+**Phase 2 — Delivery pipeline** (🚧 item 2 of 8 done, PR pending) · 
+branch `feature/build-quality` (not pushed)
 
-### Resume here — item 2: build quality
+### Resume here — open the PR for build quality
 
-Item 1 (Core + Infrastructure split, ADR-011) is merged: 
-[PR #6](https://github.com/nilde790/sound-revival/pull/6) (merge commit 
-`729ad48`, 2026-11-24). Merged branches deleted locally and on `origin` 
-(2026-11-25).
+Item 2 (build quality and reproducibility) is **complete on the 
+branch**: B1, B2, B3, B6 closed. Final check (2026-11-26): build 0 
+warnings with warnings as errors and analyzers on, 223/223 tests, 
+`dotnet format --verify-no-changes` clean, locked restore OK, no 
+vulnerable packages, `has-pending-model-changes` → no changes; app 
+started on http :5150: `/openapi/v1.json` 200 (OpenAPI 3.1.1, all 
+paths), `DELETE /api/listings/{id}` without token 401. Not checked: 
+endpoints that hit PostgreSQL (Docker was off); worth one Postman pass 
+before the PR (EF Core and Npgsql got patch updates).
 
-**Next action**: create `feature/<name>` for build quality and plan it 
-step by step: B6 (`global.json`, patch updates), B2 (Central Package 
-Management), B3 (`.editorconfig`, `dotnet format`), B1 
-(`TreatWarningsAsErrors`). Order to be agreed at the start of the item.
+**Next action**: push `feature/build-quality` and open the PR into `main` 
+(only when the developer asks). Merge with a **merge commit**, not 
+squash: `.git-blame-ignore-revs` lists the formatting commit by hash. 
+After the merge: delete the branch, move the table below to §3, start 
+item 3 (test platform, T5).
+
+| Step | State |
+|---|---|
+| 1 · branch + baseline: SDK 11.0.100, 0 warnings, 223 tests, 66 format violations, no vulnerable packages | ✅ `703aa92` |
+| 2 · `global.json` (11.0.100, `rollForward: latestPatch`); negative test with 11.0.200 fails as expected; file name lowercase (Linux is case-sensitive) | ✅ `5985dbb` |
+| 3 · Central Package Management + transitive pinning; direct pins (`Relational`, `Microsoft.OpenApi`) become transitive pins; resolved versions compared before/after: identical | ✅ `792b91d` |
+| 4 · patch updates (Microsoft 10.0.15, Npgsql 10.0.4, test packages); both pins removed after a remove-and-observe check (`Microsoft.OpenApi` now resolves to 2.13.0, the 2.7.6 pin would have downgraded it); `Solution Items` folder; `dotnet-ef` 10.0.15 as a local tool (`dotnet-tools.json`), README prerequisites | ✅ `a0ccb60`, `a31e24b`, `ccdde73` |
+| 5 · `Directory.Build.props` + `packages.lock.json` per project; negative test: a stale lock file fails locked restore (NU1004) | ✅ `7649510` |
+| 6 · `.editorconfig` (file-scoped namespaces, usings, naming, migrations as generated code) + `.gitattributes`; formatting-only commit (59 files, no logic lines changed); `.git-blame-ignore-revs` | ✅ `f9a84f0`, `7f1a6c9`, `b9329ef` |
+| 7 · `TreatWarningsAsErrors`, `AnalysisMode` `Recommended`, `EnforceCodeStyleInBuild`; common properties moved from the csproj files; CA1707 off in tests, CA1304/CA1311/CA1862 suppressed on the EF search query, CA2201 fixed; negative tests: unused `using` (IDE0005) and `new Exception()` (CA2201) fail the build | ✅ `6119625` |
+| 8 · docs: ENGINEERING-STANDARDS (STYLE-1 file-scoped, STYLE-2/3 enforced, new STYLE-5 suppressions, STYLE-6 reproducible dependencies, DoD), 06-Architecture (build configuration), 09-Roadmap (item ✅), README, CLAUDE.md (commands), STATUS | ✅ |
+
+Also on this branch: MIT license removed, all rights reserved 
+(`f5af89e`).
+
+Notes from this item:
+- Adding or updating a package changes `packages.lock.json`: commit it 
+  together with `Directory.Packages.props` (CI will fail on NU1004 
+  otherwise).
+- Every guard was checked with a test that must fail (wrong SDK, stale 
+  lock file, unused `using`, analyzer rule): a guard never seen failing 
+  may not be active.
+- XML comments cannot contain `--`: a malformed props file made restore 
+  fail while filtered output hid the error. Check exit codes, not only 
+  the output text.
+- Not adopted on purpose: `AnalysisMode` `All` (211 warnings, mostly 
+  rules that don't fit ASP.NET Core, e.g. CA2007 `ConfigureAwait`); 
+  minor/major package upgrades (e.g. `System.IdentityModel.Tokens.Jwt` 
+  8.23, .NET 11 packages).
 
 ### Coherence check (2026-11-23)
 
@@ -61,13 +96,14 @@ Phase 1 — Backend foundations ✅ closed on 2026-11-23:
 ## 3. What's built
 
 Everything below is on `main`. 223 unit tests, all green; build 
-warning-free.
+warning-free (enforced from phase 2 item 2, §1).
 
 **Phase 0** (PR #1): entities `User`/`Listing`/`Image`, `AppDbContext`, 
 `InitialCreate` migration; JWT register/login with BCrypt; 
 `UserRepository`. Build warning-free thanks to two documented pins 
 (`Microsoft.OpenApi` 2.7.5 for NU1903, 
-`Microsoft.EntityFrameworkCore.Relational` 10.0.9 for MSB3277).
+`Microsoft.EntityFrameworkCore.Relational` 10.0.9 for MSB3277; both 
+removed in phase 2 item 2, no longer needed after the patch updates).
 
 **Phase 1** (PR #3, from `feature/CRUDlistings`), step by step:
 - ✅ **Step 1 — repository** (`6a7905f`): `IListingRepository` / 
@@ -260,8 +296,6 @@ Notes from the refactor (still valid):
   phase 2 integration tests (T4), not by unit tests.
 - Test data left in the local DB by step 7 (user `step7-…@example.test`, 
   listing "Step 7 test guitar"): delete when convenient.
-- Trailing whitespace and unused `using`s left in touched files: 
-  `dotnet format` handles them in the build-quality item (B3).
 - Use `dotnet test` without `--no-build` after a change: with a failed 
   build, `--no-build` runs the old test assembly. Save all in Visual 
   Studio before running commands from the terminal.
@@ -315,11 +349,7 @@ being touched. Remove a row when fixed.
 
 | ID | Issue | Rule |
 |---|---|---|
-| B1 🟡 | Warning-free not enforced (`TreatWarningsAsErrors`) | STYLE-2 |
-| B2 🟡 | No Central Package Management; versions drift (`JwtBearer` 10.0.10 vs 10.0.9) | STYLE-2 |
-| B3 🟡 | No `.editorconfig` / `dotnet format`; unused `using`s; 66 whitespace violations today | STYLE-3 |
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-| B6 🟡 | No `global.json`: the SDK is not pinned (the dev machine has only SDK 11.0.100, CI would pick its own); patch versions behind (EF Core 10.0.9 → 10.0.15, JwtBearer 10.0.10 → 10.0.15, Microsoft.OpenApi 2.7.5 → 2.13.1, Npgsql 10.0.3 → 10.0.4) | STYLE-2, SEC-7 |
 | T5 🟡 | Test stack on xUnit v2 + VSTest + coverlet; .NET 11 templates default to xUnit v3 + Microsoft.Testing.Platform | — |
 
 ## 5. Next steps (phase 2)
@@ -330,9 +360,10 @@ in progress (items in branch order in
 The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pull/5)).
 
 1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
-2. **Next**: build quality (B1–B3, B6) → test platform (T5) → CI → 
-   integration tests (T4), so every later PR is checked automatically.
-3. `14-DevOps.md` and the deployment ADR come right before the deploy 
+2. ✅ Build quality (B1–B3, B6), on `feature/build-quality`: PR pending (§1).
+3. **Next**: test platform (T5) → CI → integration tests (T4), so every 
+   later PR is checked automatically.
+4. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
@@ -347,6 +378,8 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-25 — PR #6 (Core + Infrastructure split) 
-merged into `main`; merged branches deleted. Next: phase 2 item 2, 
-build quality (§1).*
+*Last updated: 2026-11-26 — phase 2 item 2 (build quality) complete on 
+`feature/build-quality`: SDK pinned, Central Package Management, patch 
+updates, lock files, `.editorconfig` + formatting, warnings as errors and 
+analyzers; B1, B2, B3, B6 closed; MIT license removed. Next: push and PR 
+into `main` (§1).*
