@@ -49,7 +49,8 @@ dotnet tool restore                               # once per clone: dotnet-ef
 docker compose -f ../docker-compose.yml up -d     # PostgreSQL 16 on :5432
 dotnet build SoundRevival.slnx                    # warnings are errors
 dotnet format SoundRevival.slnx                   # apply .editorconfig (CI: --verify-no-changes)
-dotnet test SoundRevival.slnx
+dotnet test SoundRevival.slnx                     # xUnit v3 on Microsoft.Testing.Platform
+dotnet test SoundRevival.slnx --coverage --coverage-output-format cobertura --coverage-settings coverage.config
 dotnet run --project SoundRevival.WebApi          # http://localhost:5150
 dotnet ef migrations add <Name> --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi
 dotnet ef database update      --project SoundRevival.Infrastructure --startup-project SoundRevival.WebApi

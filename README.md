@@ -74,7 +74,7 @@ contract: [docs/07-API-Design.md](docs/07-API-Design.md).
 | Backend | C# · ASP.NET Core Web API (.NET 10 LTS) · Entity Framework Core (Code First) | in use |
 | Database | PostgreSQL 16 (Docker) | in use |
 | Auth | JWT · BCrypt | in use |
-| Testing | xUnit · Moq · WebApplicationFactory + Testcontainers · Vitest · Playwright | unit tests in use; others planned |
+| Testing | xUnit v3 (Microsoft.Testing.Platform) · Moq · WebApplicationFactory + Testcontainers · Vitest · Playwright | unit tests in use; others planned |
 | Frontend | React · Vite · TypeScript · React Query · Axios | planned (phase 4) |
 | Delivery | Docker · GitHub Actions · cloud deployment | planned (phase 2) |
 | Observability | Structured logging · OpenTelemetry | planned (phase 5) |
@@ -151,6 +151,9 @@ dotnet run --project SoundRevival.WebApi
 
 # Run tests
 dotnet test SoundRevival.slnx
+
+# Run tests with code coverage (report in TestResults/)
+dotnet test SoundRevival.slnx --coverage --coverage-output-format cobertura --coverage-settings coverage.config
 ```
 
 Sample requests are in `backend/SoundRevival.WebApi/SoundRevival.WebApi.http`.

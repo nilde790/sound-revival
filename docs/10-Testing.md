@@ -15,7 +15,7 @@ cases.
             ├──────────────┤
             │ Integration  │  some — WebApplicationFactory + Testcontainers
             ├──────────────┤
-            │     Unit     │  many, fast — xUnit + Moq (services), Vitest (frontend)
+            │     Unit     │  many, fast — xUnit v3 + Moq (services), Vitest (frontend)
             └──────────────┘
 ```
 
@@ -30,9 +30,27 @@ problems the others can't.
 | Backend integration tests | ⬜ phase 2 (debt T4) |
 | Frontend unit/component tests | ⬜ with the frontend |
 | End-to-end tests | ⬜ later phase (see 09-Roadmap.md) |
+| Coverage collected locally (Microsoft code coverage) | ✅ |
 | Coverage report in CI | ⬜ with the CI pipeline |
 
 ## Backend
+
+### Test platform — xUnit v3 on Microsoft.Testing.Platform
+
+Test projects use **xUnit v3** on **Microsoft.Testing.Platform** (MTP), 
+not VSTest: a test project builds into an executable that contains its 
+own runner (`dotnet run --project SoundRevival.UnitTests` or the `.exe` 
+work too). `dotnet test` speaks MTP because `global.json` opts in 
+(`"test": { "runner": "Microsoft.Testing.Platform" }`); the SDK then 
+refuses any test project still on VSTest, so every new test project 
+follows the same setup (rule TEST-8). Visual Studio's Test Explorer runs 
+MTP projects natively.
+
+Exit codes are part of the contract and matter in CI 
+([full list](https://aka.ms/testingplatform/exitcodes)): `0` success, 
+`2` a test failed, `5` invalid command-line arguments, `8` **no test 
+ran** (e.g. a filter that matches nothing), so a run that tested 
+nothing cannot pass silently.
 
 ### Unit tests — xUnit + Moq
 
@@ -114,9 +132,23 @@ frontend and deployment are in place, because they need the whole stack.
 
 ## Coverage
 
-Coverage is collected in CI (`coverlet.collector` is already referenced 
-by the test project) and reported on pull requests. It is a signal for 
-untested areas, not a target: a high percentage with assertions like 
+Collected by the MTP extension `Microsoft.Testing.Extensions.CodeCoverage`; 
+from `backend/`:
+
+```bash
+dotnet test SoundRevival.slnx --coverage --coverage-output-format cobertura --coverage-settings coverage.config
+```
+
+The report lands in `backend/TestResults/*.cobertura.xml` (gitignored). 
+`backend/coverage.config` excludes generated code only (EF Core 
+migrations and model snapshot), so the numbers measure hand-written 
+code. Numbers are comparable only with the same tool and exclusions: 
+with the same tests, coverlet counted Core at 99.25%, the Microsoft tool 
+at 100%. Infrastructure stays low until the integration tests (T4) cover 
+the repositories.
+
+The CI pipeline will summarize the report on pull requests. Coverage is 
+a signal for untested areas, not a target: a high percentage with assertions like 
 `Assert.NotNull` proves little (rule TEST-1). No minimum threshold is 
 enforced for now.
 

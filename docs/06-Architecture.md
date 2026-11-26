@@ -110,7 +110,8 @@ flowchart LR
 - **Build configuration** (reproducible builds, rules STYLE-2, STYLE-3, 
   STYLE-6):
   - `global.json` (repo root) — SDK pinned to 11.0.1xx 
-    (`rollForward: latestPatch`); the projects target .NET 10
+    (`rollForward: latestPatch`); the projects target .NET 10. It also 
+    makes `dotnet test` run on Microsoft.Testing.Platform (TEST-8)
   - `dotnet-tools.json` (repo root) — local tools (`dotnet-ef`), 
     installed with `dotnet tool restore`
   - `backend/Directory.Build.props` — settings shared by every project: 
@@ -125,6 +126,8 @@ flowchart LR
     the build and by `dotnet format`; `.gitattributes` normalizes line 
     endings; `.git-blame-ignore-revs` hides formatting-only commits from 
     `git blame`
+  - `backend/coverage.config` — code coverage settings (generated code 
+    excluded), see [10-Testing.md](10-Testing.md#coverage)
 
 ```
 Controller ──> IXxxService ──> IXxxRepository ──> AppDbContext ──> PostgreSQL
