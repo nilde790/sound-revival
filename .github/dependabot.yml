@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories: ["/", "/backend"]
+    schedule:
+      interval: weekly
+    groups:
+      nuget-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.Options*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Npgsql.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "dotnet-ef"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: dotnet-sdk
+    directory: "/"
+    schedule:
+      interval: weekly
