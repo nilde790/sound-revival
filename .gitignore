@@ -1,6 +1,7 @@
 # --- .NET / Backend ---
 bin/
 obj/
+TestResults/
 *.user
 *.suo
 appsettings.Development.json
