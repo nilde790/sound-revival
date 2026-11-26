@@ -108,12 +108,15 @@ follows in Phase 4. Screenshots will be added with the frontend.
 
 ## 🚀 Running locally
 
-**Prerequisites**: .NET 10 SDK, Docker Desktop, `dotnet-ef` 
-(`dotnet tool install --global dotnet-ef`).
+**Prerequisites**: .NET SDK 11.0.1xx (pinned in `global.json`; the 
+projects target .NET 10), Docker Desktop.
 
 ```bash
 git clone https://github.com/nilde790/sound-revival.git
 cd sound-revival
+
+# Restore local tools (dotnet-ef, pinned in dotnet-tools.json)
+dotnet tool restore
 
 # Start PostgreSQL
 docker compose up -d
