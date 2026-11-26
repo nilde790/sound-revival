@@ -216,17 +216,28 @@ Image storage).
 
 ## CI/CD (high-level)
 
-- GitHub Actions workflows (`.github/workflows/`) run automatically on 
-  every push/pull request to `main` (NFR-9):
-  - Backend: build with zero warnings, `dotnet format --verify-no-changes`
-  - Frontend: ESLint, type check (`tsc --noEmit`), build
-  - Automated tests (see `10-Testing.md`)
-  - Security: dependency updates (Dependabot), code scanning (CodeQL), 
-    secret scanning
+- `.github/workflows/ci.yml` runs on every pull request to `main` and 
+  every push to `main` (NFR-9, NFR-10), one job `build-and-test` on 
+  `ubuntu-latest`, with the same commands used locally:
+  - SDK from `global.json` (plus the .NET 10 runtime the tests run on)
+  - `dotnet restore --locked-mode` → `dotnet build -c Release` (zero 
+    warnings) → `dotnet format --verify-no-changes` → `dotnet test` with 
+    code coverage; a coverage summary (ReportGenerator, local tool) is 
+    written to the run's job summary
+  - Hardening (SEC-9): `permissions: contents: read`, actions pinned by 
+    commit SHA, superseded PR runs cancelled (`concurrency`), 15-minute 
+    timeout. No NuGet cache: measured, no gain with current dependencies
+- Planned in the same workflow: frontend (ESLint, `tsc --noEmit`, build) 
+  and integration tests as their own job
+- Security, configured on GitHub: Dependabot (`.github/dependabot.yml`: 
+  NuGet, GitHub Actions, .NET SDK; weekly, minor/patch grouped, majors 
+  tied to the .NET version ignored) plus Dependabot alerts and security 
+  updates; CodeQL default setup; secret scanning with push protection
+- Ruleset `Protect main`: changes only through a pull request with the 
+  `build-and-test` check green, merge commits only, no force push or 
+  deletion, no bypass. Renaming the job breaks the required check
 - A separate deployment workflow builds the container image, applies 
-  migrations and deploys (phase 2)
-- Merging to `main` is only allowed once the pipeline passes, enforcing 
-  a baseline of code quality
+  migrations and deploys (phase 2, later item)
 
 ## Related documents
 

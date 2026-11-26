@@ -83,7 +83,9 @@ values**. Manual checks: `SoundRevival.WebApi.http` / Postman; DB: DBeaver.
 - Never expose passwords/hashes; registration always sets `role = user`.
 - Tests: services unit tested with mocked interfaces, 
   `Method_Scenario_ExpectedResult`, assert the rule (standards §11).
-- Git: `feature/<name>` branches, conventional commits, PRs into `main`.
+- Git: `feature/<name>` branches, conventional commits, PRs into `main`. 
+  The `main` ruleset requires a PR, the `build-and-test` check green and 
+  a merge commit (no squash/rebase); CI hardening rule SEC-9.
 
 ## Docs map
 

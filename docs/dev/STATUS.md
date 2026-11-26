@@ -14,44 +14,51 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 3 of 8 done, PR pending) · 
-branch `feature/test-platform` (not pushed)
+**Phase 2 — Delivery pipeline** (🚧 item 4 of 8 done, PR pending) · 
+branch `feature/ci`, draft [PR #9](https://github.com/nilde790/sound-revival/pull/9)
 
-### Resume here — open the PR for the test platform
+### Resume here — merge the CI PR
 
-Item 3 (test platform) is **complete on the branch**: T5 closed. Final 
-check (2026-11-26): build 0 warnings, 223/223 tests on xUnit v3 + 
-Microsoft.Testing.Platform (also in Visual Studio's Test Explorer), 
-`dotnet format --verify-no-changes` clean, locked restore OK, coverage 
-report generated with migrations excluded.
+Item 4 (GitHub Actions CI) is **complete on the branch** (2026-11-26): 
+`build-and-test` green on Ubuntu in about a minute, every guard seen 
+failing, Dependabot/CodeQL/secret scanning on, `main` protected by a 
+ruleset. Item 3 (test platform) was merged via 
+[PR #8](https://github.com/nilde790/sound-revival/pull/8) (`f01d8ba`).
 
-**Next action**: push `feature/test-platform` and open the PR into 
-`main` (only when the developer asks); merge commit. After the merge: 
-delete the branch, move the table below to §3, start item 4 (GitHub 
-Actions CI). Study first: LEARNING-PATH 2.3.
+**Next action**: mark PR #9 ready and merge it (merge commit; from now 
+on the ruleset enforces it). After the merge: delete the branch, move 
+the table below to §3, check Dependabot's first PRs (no major bump of 
+`Microsoft.*`/`Npgsql` expected) and CodeQL's first results 
+(Security → Code scanning). Then item 5: integration tests (T4); study 
+first LEARNING-PATH 2.5.
 
 | Step | State |
 |---|---|
-| 1 · branch + baseline: 223 tests, coverlet line coverage 43.75% (Core 99.25%, Infrastructure 6% with migrations) | ✅ `f207a5a` |
-| 2 · `global.json` opts `dotnet test` into MTP; negative test: the VSTest project is refused (exit 1) | ✅ `6c6ae54` |
-| 3–4 · `xunit.v3` 4.0.3 (MTP v2 by default), `OutputType` `Exe`; `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`, `coverlet.collector` removed; CS8625 in 5 `TheoryData` collection expressions fixed with `(string?)null`; Test Explorer checked in VS | ✅ `6c6ae54` |
-| 5 · `Microsoft.Testing.Extensions.CodeCoverage` 18.12.0; `coverage.config` excludes migrations (by namespace, so it works on Windows and Linux); `TestResults/` gitignored; line coverage 74% (Core 100%, Infrastructure 18%) | ✅ `7cd6669` |
-| 6 · negative tests: a failing test exits 2, zero tests run exits 8, 0 migration classes in the report | ✅ |
-| 7 · docs: 10-Testing (platform, exit codes, coverage), ENGINEERING-STANDARDS (new TEST-8, DoD), 06-Architecture, 09-Roadmap (item ✅), LEARNING-PATH 2.2, README, CLAUDE.md (commands), STATUS | ✅ |
+| 1 · branch, study questions 2.3/2.4 | ✅ `4900bf5` |
+| 2 · `ci.yml` written by the developer: `pull_request` + `push` to `main`, `contents: read`, `ubuntu-latest`, locked restore → Release build → format check → test; .NET 10 runtime installed next to the SDK; first run green (54 s) | ✅ `5cd4820` |
+| 3 · actions pinned by SHA (checkout v7.0.1, setup-dotnet v6.1.0), `concurrency` (cancel only PR runs), 15-min timeout; NuGet cache tried and dropped (restore from cache 15 s vs 6–7 s without) | ✅ `5f515db`, `394a645` |
+| 4 · coverage in CI + ReportGenerator 5.6.1 (local tool) → job summary; `coverage-report/` gitignored | ✅ `7e802ff` |
+| 5 · negative tests via throwaway draft PRs #10–#12: failing test → Test red (exit 2); bad indentation → Check formatting red (WHITESPACE); Moq version changed without lock file → Restore red (NU1004); PRs closed, branches deleted | ✅ |
+| 6 · `dependabot.yml` (NuGet in `/` and `/backend`, GitHub Actions, .NET SDK; weekly, minor/patch grouped, majors tied to .NET ignored); dependency graph, Dependabot alerts and security updates, CodeQL default setup enabled; secret scanning + push protection already on | ✅ `2886bb0` |
+| 7 · ruleset `Protect main` (PR required, 0 approvals, merge commit only, `build-and-test` required, no force push/deletion, no bypass); docs: 06-Architecture (CI/CD), 10-Testing, ENGINEERING-STANDARDS (new SEC-9, DoD), 09-Roadmap, README (badge), CLAUDE.md, STATUS | ✅ |
 
 Notes from this item:
-- In xUnit v3 `TheoryData<T>` holds rows (`TheoryDataRow<T>`): in a 
-  collection expression a bare `null` becomes a null *row*, not a row 
-  with a null value. Warnings as errors turned it into a build error 
-  (CS8625); write `(string?)null`.
-- XML comments cannot contain `--` (second time, after item 2): an 
-  invalid `coverage.config` was reported as "does not exist or is not 
-  valid" (exit 5).
-- Coverage numbers depend on the tool and the exclusions: compare only 
-  runs made the same way.
-- Not adopted on purpose: keeping the VSTest packages "for 
-  compatibility" (Visual Studio runs MTP natively); a coverage threshold 
-  (CI will show a summary, not gate on a percentage).
+- YAML structure is indentation: a key 2 spaces off is still valid YAML 
+  but means something else (`steps` became a second job; `cache` landed 
+  on the step instead of `with:`). Typos in keys (`permission`, 
+  `pull request`) are valid YAML too: only GitHub's schema rejects them.
+- The runner image already ships SDK 11 and the .NET 10 runtime; the 
+  workflow still declares both, so it does not depend on the image.
+- Visual Studio regenerates `packages.lock.json` on its own after a 
+  `Directory.Packages.props` change: the real mistake is leaving the 
+  lock file out of the commit, which the locked restore catches.
+- Not adopted on purpose: CI that auto-formats and commits (needs 
+  `contents: write`, commits the developer didn't write); PR comment for 
+  coverage (needs `pull-requests: write` and a third-party action); 
+  CodeQL advanced setup; "require branches to be up to date".
+- Dependabot reads `dependabot.yml` only from `main`: its first PRs come 
+  after the merge. Unverified: whether its NuGet PRs update the lock 
+  files (if not, CI fails them with NU1004).
 
 ### Coherence check (2026-11-23)
 
@@ -326,6 +333,36 @@ Notes from this item:
   minor/major package upgrades (e.g. `System.IdentityModel.Tokens.Jwt` 
   8.23, .NET 11 packages).
 
+**Phase 2, item 3 — Test platform** 
+([PR #8](https://github.com/nilde790/sound-revival/pull/8), merged 
+2026-11-26, merge commit `f01d8ba`): T5 closed. Final check: build 0 
+warnings, 223/223 tests on xUnit v3 + Microsoft.Testing.Platform (also 
+in Visual Studio's Test Explorer), format clean, locked restore OK, 
+coverage report generated with migrations excluded.
+
+| Step | State |
+|---|---|
+| 1 · branch + baseline: 223 tests, coverlet line coverage 43.75% (Core 99.25%, Infrastructure 6% with migrations) | ✅ `f207a5a` |
+| 2 · `global.json` opts `dotnet test` into MTP; negative test: the VSTest project is refused (exit 1) | ✅ `6c6ae54` |
+| 3–4 · `xunit.v3` 4.0.3 (MTP v2 by default), `OutputType` `Exe`; `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`, `coverlet.collector` removed; CS8625 in 5 `TheoryData` collection expressions fixed with `(string?)null`; Test Explorer checked in VS | ✅ `6c6ae54` |
+| 5 · `Microsoft.Testing.Extensions.CodeCoverage` 18.12.0; `coverage.config` excludes migrations (by namespace, so it works on Windows and Linux); `TestResults/` gitignored; line coverage 74% (Core 100%, Infrastructure 18%) | ✅ `7cd6669` |
+| 6 · negative tests: a failing test exits 2, zero tests run exits 8, 0 migration classes in the report | ✅ |
+| 7 · docs: 10-Testing (platform, exit codes, coverage), ENGINEERING-STANDARDS (new TEST-8, DoD), 06-Architecture, 09-Roadmap (item ✅), LEARNING-PATH 2.2, README, CLAUDE.md (commands), STATUS | ✅ `f2c5543` |
+
+Notes from this item:
+- In xUnit v3 `TheoryData<T>` holds rows (`TheoryDataRow<T>`): in a 
+  collection expression a bare `null` becomes a null *row*, not a row 
+  with a null value. Warnings as errors turned it into a build error 
+  (CS8625); write `(string?)null`.
+- XML comments cannot contain `--` (second time, after item 2): an 
+  invalid `coverage.config` was reported as "does not exist or is not 
+  valid" (exit 5).
+- Coverage numbers depend on the tool and the exclusions: compare only 
+  runs made the same way.
+- Not adopted on purpose: keeping the VSTest packages "for 
+  compatibility" (Visual Studio runs MTP natively); a coverage threshold 
+  (CI will show a summary, not gate on a percentage).
+
 **Baseline before phase 2** (measured 2026-11-23): clean build with 0 
 warnings, 220/220 tests green, no vulnerable packages (transitive 
 included). Not yet clean: 66 whitespace violations from 
@@ -385,10 +422,10 @@ The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pu
 
 1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
 2. ✅ Build quality (B1–B3, B6), merged via PR #7.
-3. ✅ Test platform (T5), on `feature/test-platform`: PR pending (§1).
-4. **Next**: CI → integration tests (T4), so every later PR is checked 
-   automatically.
-5. `14-DevOps.md` and the deployment ADR come right before the deploy 
+3. ✅ Test platform (T5), merged via PR #8.
+4. ✅ GitHub Actions CI, on `feature/ci`: draft PR #9 pending (§1).
+5. **Next**: integration tests (T4), as their own CI job.
+6. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
@@ -406,7 +443,6 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-26 — phase 2 item 3 (test platform) complete on 
-`feature/test-platform`: xUnit v3 on Microsoft.Testing.Platform, Microsoft 
-code coverage with migrations excluded; T5 closed. Next: push and PR 
-into `main` (§1).*
+*Last updated: 2026-11-26 — phase 2 item 4 (GitHub Actions CI) complete 
+on `feature/ci`: workflow, SHA pinning, coverage summary, Dependabot, 
+CodeQL, ruleset on `main`. Next: merge draft PR #9 (§1).*

@@ -173,6 +173,14 @@ See [`../05-Database.md`](../05-Database.md).
 - **SEC-7 (MUST)** Fix vulnerable dependencies (NU1901–NU1904); a pin 
   used as a fix carries a comment with the advisory id.
 - **SEC-8 (MUST, before the frontend)** CORS allows only known origins.
+- **SEC-9 (MUST) CI workflows run with least privilege**: 
+  `permissions: contents: read` unless a job needs more (granted per 
+  job, with a comment); every action pinned to a full commit SHA with 
+  the version in a comment (`@<sha> # v7.0.1`), updated by Dependabot 
+  PRs; prefer a local `dotnet tool` to a third-party action; no 
+  workflow that commits to the repository. *Why*: a tag can be moved to 
+  malicious code (`tj-actions/changed-files`, 2025); the token's 
+  permissions bound the damage.
 
 ## 8. Configuration
 
@@ -276,6 +284,8 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
       (`dotnet test` exits 0)
 - [ ] `dotnet build` with zero warnings; `dotnet format 
       --verify-no-changes` clean
+- [ ] CI check `build-and-test` green on the PR (required by the `main` 
+      ruleset)
 - [ ] Affected living docs (API, schema, architecture) updated; new 
       trade-off decisions recorded as ADRs
 - [ ] Happy path and one error case tried manually (`.http` / Postman)

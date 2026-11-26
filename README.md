@@ -4,8 +4,10 @@ A vertical marketplace for buying and selling used musical instruments
 between private users and small shops — built as a **portfolio case 
 study** in professional backend and full-stack engineering.
 
-<!-- Badges go here only when they are real: CI status (phase 2),
-     deployed API docs (phase 2). No placeholder badges. -->
+[![CI](https://github.com/nilde790/sound-revival/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nilde790/sound-revival/actions/workflows/ci.yml)
+
+<!-- Badges go here only when they are real: deployed API docs (phase 2)
+     next. No placeholder badges. -->
 
 > 🚧 **Work in progress.** Authentication and the listings API are done 
 > (roadmap **Phase 1**); the delivery pipeline is being built (**Phase 2**: 
@@ -76,7 +78,7 @@ contract: [docs/07-API-Design.md](docs/07-API-Design.md).
 | Auth | JWT · BCrypt | in use |
 | Testing | xUnit v3 (Microsoft.Testing.Platform) · Moq · WebApplicationFactory + Testcontainers · Vitest · Playwright | unit tests in use; others planned |
 | Frontend | React · Vite · TypeScript · React Query · Axios | planned (phase 4) |
-| Delivery | Docker · GitHub Actions · cloud deployment | planned (phase 2) |
+| Delivery | GitHub Actions (CI, Dependabot, CodeQL) · Docker · cloud deployment | CI in use; others planned (phase 2) |
 | Observability | Structured logging · OpenTelemetry | planned (phase 5) |
 
 ## 🧭 Engineering practices

@@ -31,7 +31,7 @@ problems the others can't.
 | Frontend unit/component tests | ⬜ with the frontend |
 | End-to-end tests | ⬜ later phase (see 09-Roadmap.md) |
 | Coverage collected locally (Microsoft code coverage) | ✅ |
-| Coverage report in CI | ⬜ with the CI pipeline |
+| Tests and coverage summary in CI | ✅ every PR to `main` |
 
 ## Backend
 
@@ -147,7 +147,9 @@ with the same tests, coverlet counted Core at 99.25%, the Microsoft tool
 at 100%. Infrastructure stays low until the integration tests (T4) cover 
 the repositories.
 
-The CI pipeline will summarize the report on pull requests. Coverage is 
+In CI the report is turned into a Markdown table by ReportGenerator 
+(local tool in `dotnet-tools.json`) and shown in the run's **Summary** 
+page; CI numbers (Release build) are the reference. Coverage is 
 a signal for untested areas, not a target: a high percentage with assertions like 
 `Assert.NotNull` proves little (rule TEST-1). No minimum threshold is 
 enforced for now.
@@ -162,7 +164,8 @@ enforced for now.
 
 ## CI integration
 
-Backend unit and integration tests, and frontend tests once they exist, 
-run automatically via GitHub Actions on every push/pull request (see 
-06-Architecture.md → CI/CD) and must pass before merging to `main` 
-(NFR-9).
+Backend unit tests run in the `build-and-test` job on every pull request 
+and push to `main` (see 06-Architecture.md → CI/CD); the `main` ruleset 
+blocks the merge unless the job is green (NFR-9). A failing test (exit 
+2) or a run with no tests (exit 8) turns the job red. Integration tests 
+(T4) and frontend tests will join as their own jobs.
