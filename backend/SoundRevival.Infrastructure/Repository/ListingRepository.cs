@@ -77,9 +77,13 @@ public class ListingRepository : IListingRepository
             // Case-insensitive: the column is lowered in SQL (lower()), the term here with the invariant culture.
             var term = filter.Search.Trim().ToLowerInvariant();
 
+            // CA1304/CA1311/CA1862 assume this runs in .NET; EF Core translates it to SQL lower() ... LIKE.
+            // The suggested culture or StringComparison overloads cannot be translated and would throw.
+#pragma warning disable CA1304, CA1311, CA1862
             query = query.Where(l =>
                 l.Title.ToLower().Contains(term) ||
                 l.Description.ToLower().Contains(term));
+#pragma warning restore CA1304, CA1311, CA1862
 
         }
 

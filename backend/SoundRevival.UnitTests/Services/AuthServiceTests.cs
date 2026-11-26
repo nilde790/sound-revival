@@ -130,7 +130,7 @@ public class AuthServiceTests
         _userRepo.Setup(r => r.FindUserByEmail("race@gmail.com")).ReturnsAsync((User?)null);
         _userRepo.Setup(r => r.SaveChangesAsync())
             .ThrowsAsync(new UniqueConstraintViolationException("save failed",
-                new Exception()));
+                new InvalidOperationException()));
 
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
             _authService.RegisterAsync(new RegisterRequestDto { Email = "race@gmail.com", Password = "x" }));

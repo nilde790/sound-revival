@@ -52,6 +52,10 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 dotnet_naming_style.underscore_camel_case.required_prefix = _
 
+# Tests: method names follow Method_Scenario_ExpectedResult (standards §11)
+[backend/SoundRevival.UnitTests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+
 # Generated code: never reformat EF Core migrations
 [**/Migrations/*.cs]
 generated_code = true

@@ -3,6 +3,31 @@
     Build settings shared by every project under backend/.
     MSBuild imports this file automatically (it walks up from each .csproj).
   -->
+
+  <!-- Common project settings -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Build quality (STYLE-2, STYLE-3) -->
+  <PropertyGroup>
+    <!-- Zero warnings, enforced: any warning fails the build, locally and in CI. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- .NET code analyzers at the recommended rule set. -->
+    <AnalysisMode>Recommended</AnalysisMode>
+    <!-- .editorconfig code style rules (IDExxxx) are checked by the build, not only by the IDE. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!--
+      IDE0005 (unused usings) is reported at build time only when XML documentation
+      is generated; CS1591 (missing XML comment on public members) is not a rule here.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Restore -->
   <PropertyGroup>
     <!--
       Lock files: each project gets a packages.lock.json with the full resolved
