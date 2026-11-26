@@ -1,10 +1,9 @@
 
-namespace SoundRevival.Core.Exceptions
+namespace SoundRevival.Core.Exceptions;
+
+public class BusinessRuleException : AppException
 {
-    public class BusinessRuleException : AppException
+    public BusinessRuleException(string message) : base(message, 400)
     {
-        public BusinessRuleException(string message) : base(message, 400)
-        {
-        }
     }
 }

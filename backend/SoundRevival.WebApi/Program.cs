@@ -1,12 +1,12 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SoundRevival.Infrastructure;
 using SoundRevival.Core.Interfaces;
 using SoundRevival.Core.Services;
+using SoundRevival.Infrastructure;
 using SoundRevival.Infrastructure.Settings;
 using SoundRevival.WebApi.ExceptionHandling;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 

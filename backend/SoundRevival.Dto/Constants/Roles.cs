@@ -1,10 +1,9 @@
-﻿namespace SoundRevival.Dto.Constants
+namespace SoundRevival.Dto.Constants;
+
+public static class Roles
 {
-    public static class Roles
-    {
-        public const string Admin = "admin";
+    public const string Admin = "admin";
 
-        public const string User = "user";
+    public const string User = "user";
 
-    }
 }

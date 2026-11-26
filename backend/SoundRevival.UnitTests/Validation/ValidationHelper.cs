@@ -1,19 +1,18 @@
-﻿
+
 using System.ComponentModel.DataAnnotations;
 
 
-namespace SoundRevival.UnitTests.Validation
+namespace SoundRevival.UnitTests.Validation;
+
+public static class ValidationHelper
 {
-    public static class ValidationHelper
+    public static List<ValidationResult> Validate(object model)
     {
-        public static List<ValidationResult> Validate(object model)
-        {
-            ValidationContext validationContext = new(model);
-            List<ValidationResult> validationResults = [];
+        ValidationContext validationContext = new(model);
+        List<ValidationResult> validationResults = [];
 
-            Validator.TryValidateObject(model, validationContext, validationResults, validateAllProperties: true);
+        Validator.TryValidateObject(model, validationContext, validationResults, validateAllProperties: true);
 
-            return validationResults;
-        }
+        return validationResults;
     }
 }

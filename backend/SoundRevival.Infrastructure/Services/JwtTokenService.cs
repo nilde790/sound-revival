@@ -7,37 +7,36 @@ using SoundRevival.Core.Entities;
 using SoundRevival.Core.Interfaces;
 using SoundRevival.Infrastructure.Settings;
 
-namespace SoundRevival.Infrastructure.Services
+namespace SoundRevival.Infrastructure.Services;
+
+public class JwtTokenService : ITokenService
 {
-    public class JwtTokenService : ITokenService
+    private readonly JwtSettings _jwtSettings;
+
+    public JwtTokenService(IOptions<JwtSettings> jwtOptions)
     {
-        private readonly JwtSettings _jwtSettings;
+        _jwtSettings = jwtOptions.Value;
+    }
 
-        public JwtTokenService(IOptions<JwtSettings> jwtOptions)
+    public string GenerateToken(User user)
+    {
+        var claims = new List<Claim>
         {
-            _jwtSettings = jwtOptions.Value;
-        }
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.Role, user.Role),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email)
+        };
 
-        public string GenerateToken(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email)
-            };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            signingCredentials: credentials);
 
-            var token = new JwtSecurityToken(
-                issuer: _jwtSettings.Issuer,
-                audience: _jwtSettings.Audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
-                signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

@@ -1,9 +1,8 @@
-namespace SoundRevival.Core.Exceptions
+namespace SoundRevival.Core.Exceptions;
+
+public class InvalidCredentialsException : AppException
 {
-    public class InvalidCredentialsException : AppException
+    public InvalidCredentialsException(string message) : base(message, 401)
     {
-        public InvalidCredentialsException(string message) : base(message, 401)
-        {
-        }
     }
 }
