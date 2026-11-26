@@ -10,7 +10,7 @@ public class LoginRequestDtoTests
         Password = "Password1"
     };
 
-    public static TheoryData<string?> MissingStrings => [null, "", "   "];
+    public static TheoryData<string?> MissingStrings => [(string?)null, "", "   "];
 
     [Fact]
     public void Validate_ValidRequest_ReturnsNoErrors()

@@ -15,7 +15,7 @@ public class UpdateListingRequestDtoTests
         Condition = "Good"
     };
 
-    public static TheoryData<string?> MissingStrings => [null, "", "   "];
+    public static TheoryData<string?> MissingStrings => [(string?)null, "", "   "];
 
     public static TheoryData<decimal> ValidPrices => [0.01m, 1000000m, 450.50m];
 

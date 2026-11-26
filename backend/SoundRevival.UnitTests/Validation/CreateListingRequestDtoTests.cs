@@ -13,7 +13,7 @@ public class CreateListingRequestDtoTests
         Category = "Keyboards",
         Condition = "Like New"
     };
-    public static TheoryData<string?> MissingStrings => [null, "", "   "];
+    public static TheoryData<string?> MissingStrings => [(string?)null, "", "   "];
 
 
     [Fact]

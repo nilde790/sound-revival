@@ -5,7 +5,7 @@ namespace SoundRevival.UnitTests.Validation;
 
 public class UpdateListingStatusRequestDtoTests
 {
-    public static TheoryData<string?> MissingStrings => [null, "", "   "];
+    public static TheoryData<string?> MissingStrings => [(string?)null, "", "   "];
 
     [Theory]
     [InlineData(ListingValues.Available)]

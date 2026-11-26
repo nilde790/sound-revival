@@ -192,6 +192,7 @@ first branch of the phase.
 1. With Microsoft.Testing.Platform, what is the test project when you 
    build it? How does that differ from VSTest?
 2. What changes for coverage collection?
+3. What does exit code 8 mean, and why does it matter in CI?
 
 ### 2.3 Continuous integration with GitHub Actions 🟢
 **Where**: `.github/workflows/`, NFR-9/NFR-10, a ruleset on `main`.

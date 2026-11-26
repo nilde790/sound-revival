@@ -14,58 +14,44 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 2 of 8 done, PR pending) · 
-branch `feature/build-quality` (not pushed)
+**Phase 2 — Delivery pipeline** (🚧 item 3 of 8 done, PR pending) · 
+branch `feature/test-platform` (not pushed)
 
-### Resume here — open the PR for build quality
+### Resume here — open the PR for the test platform
 
-Item 2 (build quality and reproducibility) is **complete on the 
-branch**: B1, B2, B3, B6 closed. Final check (2026-11-26): build 0 
-warnings with warnings as errors and analyzers on, 223/223 tests, 
-`dotnet format --verify-no-changes` clean, locked restore OK, no 
-vulnerable packages, `has-pending-model-changes` → no changes; app 
-started on http :5150: `/openapi/v1.json` 200 (OpenAPI 3.1.1, all 
-paths), `DELETE /api/listings/{id}` without token 401. Against 
-PostgreSQL on https :7196: register 200, duplicate 400 (`23505` path), 
-login 200, create listing 201 + `Location`, case-insensitive search 
-with `sort=price_asc` 200 (finds the new listing), detail 200 with 
-seller. Test data left: user `bq-…@example.test`, listing 
-"BQ Stratocaster …".
+Item 3 (test platform) is **complete on the branch**: T5 closed. Final 
+check (2026-11-26): build 0 warnings, 223/223 tests on xUnit v3 + 
+Microsoft.Testing.Platform (also in Visual Studio's Test Explorer), 
+`dotnet format --verify-no-changes` clean, locked restore OK, coverage 
+report generated with migrations excluded.
 
-**Next action**: push `feature/build-quality` and open the PR into `main` 
-(only when the developer asks). Merge with a **merge commit**, not 
-squash: `.git-blame-ignore-revs` lists the formatting commit by hash. 
-After the merge: delete the branch, move the table below to §3, start 
-item 3 (test platform, T5).
+**Next action**: push `feature/test-platform` and open the PR into 
+`main` (only when the developer asks); merge commit. After the merge: 
+delete the branch, move the table below to §3, start item 4 (GitHub 
+Actions CI). Study first: LEARNING-PATH 2.3.
 
 | Step | State |
 |---|---|
-| 1 · branch + baseline: SDK 11.0.100, 0 warnings, 223 tests, 66 format violations, no vulnerable packages | ✅ `703aa92` |
-| 2 · `global.json` (11.0.100, `rollForward: latestPatch`); negative test with 11.0.200 fails as expected; file name lowercase (Linux is case-sensitive) | ✅ `5985dbb` |
-| 3 · Central Package Management + transitive pinning; direct pins (`Relational`, `Microsoft.OpenApi`) become transitive pins; resolved versions compared before/after: identical | ✅ `792b91d` |
-| 4 · patch updates (Microsoft 10.0.15, Npgsql 10.0.4, test packages); both pins removed after a remove-and-observe check (`Microsoft.OpenApi` now resolves to 2.13.0, the 2.7.6 pin would have downgraded it); `Solution Items` folder; `dotnet-ef` 10.0.15 as a local tool (`dotnet-tools.json`), README prerequisites | ✅ `a0ccb60`, `a31e24b`, `ccdde73` |
-| 5 · `Directory.Build.props` + `packages.lock.json` per project; negative test: a stale lock file fails locked restore (NU1004) | ✅ `7649510` |
-| 6 · `.editorconfig` (file-scoped namespaces, usings, naming, migrations as generated code) + `.gitattributes`; formatting-only commit (59 files, no logic lines changed); `.git-blame-ignore-revs` | ✅ `f9a84f0`, `7f1a6c9`, `b9329ef` |
-| 7 · `TreatWarningsAsErrors`, `AnalysisMode` `Recommended`, `EnforceCodeStyleInBuild`; common properties moved from the csproj files; CA1707 off in tests, CA1304/CA1311/CA1862 suppressed on the EF search query, CA2201 fixed; negative tests: unused `using` (IDE0005) and `new Exception()` (CA2201) fail the build | ✅ `6119625` |
-| 8 · docs: ENGINEERING-STANDARDS (STYLE-1 file-scoped, STYLE-2/3 enforced, new STYLE-5 suppressions, STYLE-6 reproducible dependencies, DoD), 06-Architecture (build configuration), 09-Roadmap (item ✅), README, CLAUDE.md (commands), STATUS | ✅ |
-
-Also on this branch: MIT license removed, all rights reserved 
-(`f5af89e`).
+| 1 · branch + baseline: 223 tests, coverlet line coverage 43.75% (Core 99.25%, Infrastructure 6% with migrations) | ✅ `f207a5a` |
+| 2 · `global.json` opts `dotnet test` into MTP; negative test: the VSTest project is refused (exit 1) | ✅ `6c6ae54` |
+| 3–4 · `xunit.v3` 4.0.3 (MTP v2 by default), `OutputType` `Exe`; `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`, `coverlet.collector` removed; CS8625 in 5 `TheoryData` collection expressions fixed with `(string?)null`; Test Explorer checked in VS | ✅ `6c6ae54` |
+| 5 · `Microsoft.Testing.Extensions.CodeCoverage` 18.12.0; `coverage.config` excludes migrations (by namespace, so it works on Windows and Linux); `TestResults/` gitignored; line coverage 74% (Core 100%, Infrastructure 18%) | ✅ `7cd6669` |
+| 6 · negative tests: a failing test exits 2, zero tests run exits 8, 0 migration classes in the report | ✅ |
+| 7 · docs: 10-Testing (platform, exit codes, coverage), ENGINEERING-STANDARDS (new TEST-8, DoD), 06-Architecture, 09-Roadmap (item ✅), LEARNING-PATH 2.2, README, CLAUDE.md (commands), STATUS | ✅ |
 
 Notes from this item:
-- Adding or updating a package changes `packages.lock.json`: commit it 
-  together with `Directory.Packages.props` (CI will fail on NU1004 
-  otherwise).
-- Every guard was checked with a test that must fail (wrong SDK, stale 
-  lock file, unused `using`, analyzer rule): a guard never seen failing 
-  may not be active.
-- XML comments cannot contain `--`: a malformed props file made restore 
-  fail while filtered output hid the error. Check exit codes, not only 
-  the output text.
-- Not adopted on purpose: `AnalysisMode` `All` (211 warnings, mostly 
-  rules that don't fit ASP.NET Core, e.g. CA2007 `ConfigureAwait`); 
-  minor/major package upgrades (e.g. `System.IdentityModel.Tokens.Jwt` 
-  8.23, .NET 11 packages).
+- In xUnit v3 `TheoryData<T>` holds rows (`TheoryDataRow<T>`): in a 
+  collection expression a bare `null` becomes a null *row*, not a row 
+  with a null value. Warnings as errors turned it into a build error 
+  (CS8625); write `(string?)null`.
+- XML comments cannot contain `--` (second time, after item 2): an 
+  invalid `coverage.config` was reported as "does not exist or is not 
+  valid" (exit 5).
+- Coverage numbers depend on the tool and the exclusions: compare only 
+  runs made the same way.
+- Not adopted on purpose: keeping the VSTest packages "for 
+  compatibility" (Visual Studio runs MTP natively); a coverage threshold 
+  (CI will show a summary, not gate on a percentage).
 
 ### Coherence check (2026-11-23)
 
@@ -304,6 +290,42 @@ Notes from the refactor (still valid):
   Studio before running commands from the terminal.
 - Docker Desktop must be running before `docker compose up -d`.
 
+**Phase 2, item 2 — Build quality and reproducibility** 
+([PR #7](https://github.com/nilde790/sound-revival/pull/7), merged 
+2026-11-26, merge commit `e2af4cd`): B1, B2, B3, B6 closed. Final check: 
+build 0 warnings with warnings as errors and analyzers, 223/223 tests, 
+format clean, locked restore OK, no vulnerable packages, API checked 
+against PostgreSQL on https :7196.
+
+| Step | State |
+|---|---|
+| 1 · branch + baseline: SDK 11.0.100, 0 warnings, 223 tests, 66 format violations, no vulnerable packages | ✅ `703aa92` |
+| 2 · `global.json` (11.0.100, `rollForward: latestPatch`); negative test with 11.0.200 fails as expected; file name lowercase (Linux is case-sensitive) | ✅ `5985dbb` |
+| 3 · Central Package Management + transitive pinning; direct pins (`Relational`, `Microsoft.OpenApi`) become transitive pins; resolved versions compared before/after: identical | ✅ `792b91d` |
+| 4 · patch updates (Microsoft 10.0.15, Npgsql 10.0.4, test packages); both pins removed after a remove-and-observe check (`Microsoft.OpenApi` now resolves to 2.13.0, the 2.7.6 pin would have downgraded it); `Solution Items` folder; `dotnet-ef` 10.0.15 as a local tool (`dotnet-tools.json`), README prerequisites | ✅ `a0ccb60`, `a31e24b`, `ccdde73` |
+| 5 · `Directory.Build.props` + `packages.lock.json` per project; negative test: a stale lock file fails locked restore (NU1004) | ✅ `7649510` |
+| 6 · `.editorconfig` (file-scoped namespaces, usings, naming, migrations as generated code) + `.gitattributes`; formatting-only commit (59 files, no logic lines changed); `.git-blame-ignore-revs` | ✅ `f9a84f0`, `7f1a6c9`, `b9329ef` |
+| 7 · `TreatWarningsAsErrors`, `AnalysisMode` `Recommended`, `EnforceCodeStyleInBuild`; common properties moved from the csproj files; CA1707 off in tests, CA1304/CA1311/CA1862 suppressed on the EF search query, CA2201 fixed; negative tests: unused `using` (IDE0005) and `new Exception()` (CA2201) fail the build | ✅ `6119625` |
+| 8 · docs: ENGINEERING-STANDARDS (STYLE-1 file-scoped, STYLE-2/3 enforced, new STYLE-5 suppressions, STYLE-6 reproducible dependencies, DoD), 06-Architecture (build configuration), 09-Roadmap (item ✅), README, CLAUDE.md (commands), STATUS | ✅ `b5867d1`, `e3cd30d` |
+
+Also in this PR: MIT license removed, all rights reserved 
+(`f5af89e`).
+
+Notes from this item:
+- Adding or updating a package changes `packages.lock.json`: commit it 
+  together with `Directory.Packages.props` (CI will fail on NU1004 
+  otherwise).
+- Every guard was checked with a test that must fail (wrong SDK, stale 
+  lock file, unused `using`, analyzer rule): a guard never seen failing 
+  may not be active.
+- XML comments cannot contain `--`: a malformed props file made restore 
+  fail while filtered output hid the error. Check exit codes, not only 
+  the output text.
+- Not adopted on purpose: `AnalysisMode` `All` (211 warnings, mostly 
+  rules that don't fit ASP.NET Core, e.g. CA2007 `ConfigureAwait`); 
+  minor/major package upgrades (e.g. `System.IdentityModel.Tokens.Jwt` 
+  8.23, .NET 11 packages).
+
 **Baseline before phase 2** (measured 2026-11-23): clean build with 0 
 warnings, 220/220 tests green, no vulnerable packages (transitive 
 included). Not yet clean: 66 whitespace violations from 
@@ -353,7 +375,6 @@ being touched. Remove a row when fixed.
 | ID | Issue | Rule |
 |---|---|---|
 | B4 🟡 | No OpenAPI UI (Scalar) nor Bearer scheme | — |
-| T5 🟡 | Test stack on xUnit v2 + VSTest + coverlet; .NET 11 templates default to xUnit v3 + Microsoft.Testing.Platform | — |
 
 ## 5. Next steps (phase 2)
 
@@ -363,10 +384,11 @@ in progress (items in branch order in
 The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pull/5)).
 
 1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
-2. ✅ Build quality (B1–B3, B6), on `feature/build-quality`: PR pending (§1).
-3. **Next**: test platform (T5) → CI → integration tests (T4), so every 
-   later PR is checked automatically.
-4. `14-DevOps.md` and the deployment ADR come right before the deploy 
+2. ✅ Build quality (B1–B3, B6), merged via PR #7.
+3. ✅ Test platform (T5), on `feature/test-platform`: PR pending (§1).
+4. **Next**: CI → integration tests (T4), so every later PR is checked 
+   automatically.
+5. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
@@ -374,15 +396,17 @@ every few days, merge commit; delete the branch (local and `origin`)
 after the merge.
 
 Working split agreed: Claude writes repetitive code/tests and proposes 
-that the developer write each piece that introduces something new.
+that the developer write each piece that introduces something new. 
+Mechanical and configuration work (package swaps, `global.json`, 
+`.csproj`/props edits, lock files) is done by Claude once the step is 
+approved, followed by a summary of what changed and why.
 
 Working mode: `/learn-code` — the developer writes the code, Claude 
 explains, gives hints on other examples and reviews each file against the 
 standards.
 
 ---
-*Last updated: 2026-11-26 — phase 2 item 2 (build quality) complete on 
-`feature/build-quality`: SDK pinned, Central Package Management, patch 
-updates, lock files, `.editorconfig` + formatting, warnings as errors and 
-analyzers; B1, B2, B3, B6 closed; MIT license removed. Next: push and PR 
+*Last updated: 2026-11-26 — phase 2 item 3 (test platform) complete on 
+`feature/test-platform`: xUnit v3 on Microsoft.Testing.Platform, Microsoft 
+code coverage with migrations excluded; T5 closed. Next: push and PR 
 into `main` (§1).*

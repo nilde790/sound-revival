@@ -224,6 +224,14 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
   Don't mock `DbContext`.
 - **TEST-7 (SHOULD)** Test folders mirror the code (`Services/`, 
   `Integration/`), not tools (`Mock/`).
+- **TEST-8 (MUST) One test platform**: every test project uses 
+  `xunit.v3` on Microsoft.Testing.Platform (`OutputType` `Exe`; no 
+  `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` or 
+  `coverlet.collector`); coverage through 
+  `Microsoft.Testing.Extensions.CodeCoverage` with 
+  `backend/coverage.config`, which excludes generated code only. *Why*: 
+  `global.json` makes `dotnet test` run MTP and refuses VSTest projects; 
+  one setup keeps commands, coverage and CI identical for every project.
 
 ## 12. Style and build
 
@@ -264,7 +272,8 @@ Strategy and tools: [`../10-Testing.md`](../10-Testing.md).
 - [ ] Meets the related FR / US acceptance criteria (ids in the PR)
 - [ ] All MUST rules hold; SHOULD deviations are explained
 - [ ] Inputs validated and bounded; every expected failure mapped
-- [ ] Each business rule and failure branch tested; all tests pass
+- [ ] Each business rule and failure branch tested; all tests pass 
+      (`dotnet test` exits 0)
 - [ ] `dotnet build` with zero warnings; `dotnet format 
       --verify-no-changes` clean
 - [ ] Affected living docs (API, schema, architecture) updated; new 
