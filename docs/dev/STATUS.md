@@ -14,20 +14,51 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 3 of 8 done) · on `main`, 
-no feature branch open
+**Phase 2 — Delivery pipeline** (🚧 item 4 of 8 done, PR pending) · 
+branch `feature/ci`, draft [PR #9](https://github.com/nilde790/sound-revival/pull/9)
 
-### Resume here — item 4: GitHub Actions CI
+### Resume here — merge the CI PR
 
-Item 3 (test platform) is merged: 
-[PR #8](https://github.com/nilde790/sound-revival/pull/8) (merge commit 
-`f01d8ba`, 2026-11-26); branch deleted locally and on `origin`.
+Item 4 (GitHub Actions CI) is **complete on the branch** (2026-11-26): 
+`build-and-test` green on Ubuntu in about a minute, every guard seen 
+failing, Dependabot/CodeQL/secret scanning on, `main` protected by a 
+ruleset. Item 3 (test platform) was merged via 
+[PR #8](https://github.com/nilde790/sound-revival/pull/8) (`f01d8ba`).
 
-**Next action**: create `feature/<name>` for the CI (roadmap phase 2, 
-item 4: locked restore, build, format check, unit tests, coverage 
-summary on PRs; least-privilege permissions, actions pinned by SHA; 
-Dependabot, CodeQL, secret scanning; ruleset on `main`) and plan it step 
-by step. Study first: LEARNING-PATH 2.3.
+**Next action**: mark PR #9 ready and merge it (merge commit; from now 
+on the ruleset enforces it). After the merge: delete the branch, move 
+the table below to §3, check Dependabot's first PRs (no major bump of 
+`Microsoft.*`/`Npgsql` expected) and CodeQL's first results 
+(Security → Code scanning). Then item 5: integration tests (T4); study 
+first LEARNING-PATH 2.5.
+
+| Step | State |
+|---|---|
+| 1 · branch, study questions 2.3/2.4 | ✅ `4900bf5` |
+| 2 · `ci.yml` written by the developer: `pull_request` + `push` to `main`, `contents: read`, `ubuntu-latest`, locked restore → Release build → format check → test; .NET 10 runtime installed next to the SDK; first run green (54 s) | ✅ `5cd4820` |
+| 3 · actions pinned by SHA (checkout v7.0.1, setup-dotnet v6.1.0), `concurrency` (cancel only PR runs), 15-min timeout; NuGet cache tried and dropped (restore from cache 15 s vs 6–7 s without) | ✅ `5f515db`, `394a645` |
+| 4 · coverage in CI + ReportGenerator 5.6.1 (local tool) → job summary; `coverage-report/` gitignored | ✅ `7e802ff` |
+| 5 · negative tests via throwaway draft PRs #10–#12: failing test → Test red (exit 2); bad indentation → Check formatting red (WHITESPACE); Moq version changed without lock file → Restore red (NU1004); PRs closed, branches deleted | ✅ |
+| 6 · `dependabot.yml` (NuGet in `/` and `/backend`, GitHub Actions, .NET SDK; weekly, minor/patch grouped, majors tied to .NET ignored); dependency graph, Dependabot alerts and security updates, CodeQL default setup enabled; secret scanning + push protection already on | ✅ `2886bb0` |
+| 7 · ruleset `Protect main` (PR required, 0 approvals, merge commit only, `build-and-test` required, no force push/deletion, no bypass); docs: 06-Architecture (CI/CD), 10-Testing, ENGINEERING-STANDARDS (new SEC-9, DoD), 09-Roadmap, README (badge), CLAUDE.md, STATUS | ✅ |
+
+Notes from this item:
+- YAML structure is indentation: a key 2 spaces off is still valid YAML 
+  but means something else (`steps` became a second job; `cache` landed 
+  on the step instead of `with:`). Typos in keys (`permission`, 
+  `pull request`) are valid YAML too: only GitHub's schema rejects them.
+- The runner image already ships SDK 11 and the .NET 10 runtime; the 
+  workflow still declares both, so it does not depend on the image.
+- Visual Studio regenerates `packages.lock.json` on its own after a 
+  `Directory.Packages.props` change: the real mistake is leaving the 
+  lock file out of the commit, which the locked restore catches.
+- Not adopted on purpose: CI that auto-formats and commits (needs 
+  `contents: write`, commits the developer didn't write); PR comment for 
+  coverage (needs `pull-requests: write` and a third-party action); 
+  CodeQL advanced setup; "require branches to be up to date".
+- Dependabot reads `dependabot.yml` only from `main`: its first PRs come 
+  after the merge. Unverified: whether its NuGet PRs update the lock 
+  files (if not, CI fails them with NU1004).
 
 ### Coherence check (2026-11-23)
 
@@ -392,9 +423,9 @@ The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pu
 1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
 2. ✅ Build quality (B1–B3, B6), merged via PR #7.
 3. ✅ Test platform (T5), merged via PR #8.
-4. **Next**: CI → integration tests (T4), so every later PR is checked 
-   automatically.
-5. `14-DevOps.md` and the deployment ADR come right before the deploy 
+4. ✅ GitHub Actions CI, on `feature/ci`: draft PR #9 pending (§1).
+5. **Next**: integration tests (T4), as their own CI job.
+6. `14-DevOps.md` and the deployment ADR come right before the deploy 
    item, with the constraints listed in the roadmap.
 
 Git: one short `feature/<name>` branch per roadmap item, PR into `main` 
@@ -412,5 +443,6 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-26 — PR #8 (test platform) merged into `main`; 
-branch deleted. Next: phase 2 item 4, GitHub Actions CI (§1).*
+*Last updated: 2026-11-26 — phase 2 item 4 (GitHub Actions CI) complete 
+on `feature/ci`: workflow, SHA pinning, coverage summary, Dependabot, 
+CodeQL, ruleset on `main`. Next: merge draft PR #9 (§1).*
