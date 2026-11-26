@@ -14,44 +14,20 @@ with AI guidance and review. Repo: `github.com/nilde790/sound-revival`.
 
 ## 1. Current phase and branch
 
-**Phase 2 — Delivery pipeline** (🚧 item 3 of 8 done, PR pending) · 
-branch `feature/test-platform` (not pushed)
+**Phase 2 — Delivery pipeline** (🚧 item 3 of 8 done) · on `main`, 
+no feature branch open
 
-### Resume here — open the PR for the test platform
+### Resume here — item 4: GitHub Actions CI
 
-Item 3 (test platform) is **complete on the branch**: T5 closed. Final 
-check (2026-11-26): build 0 warnings, 223/223 tests on xUnit v3 + 
-Microsoft.Testing.Platform (also in Visual Studio's Test Explorer), 
-`dotnet format --verify-no-changes` clean, locked restore OK, coverage 
-report generated with migrations excluded.
+Item 3 (test platform) is merged: 
+[PR #8](https://github.com/nilde790/sound-revival/pull/8) (merge commit 
+`f01d8ba`, 2026-11-26); branch deleted locally and on `origin`.
 
-**Next action**: push `feature/test-platform` and open the PR into 
-`main` (only when the developer asks); merge commit. After the merge: 
-delete the branch, move the table below to §3, start item 4 (GitHub 
-Actions CI). Study first: LEARNING-PATH 2.3.
-
-| Step | State |
-|---|---|
-| 1 · branch + baseline: 223 tests, coverlet line coverage 43.75% (Core 99.25%, Infrastructure 6% with migrations) | ✅ `f207a5a` |
-| 2 · `global.json` opts `dotnet test` into MTP; negative test: the VSTest project is refused (exit 1) | ✅ `6c6ae54` |
-| 3–4 · `xunit.v3` 4.0.3 (MTP v2 by default), `OutputType` `Exe`; `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`, `coverlet.collector` removed; CS8625 in 5 `TheoryData` collection expressions fixed with `(string?)null`; Test Explorer checked in VS | ✅ `6c6ae54` |
-| 5 · `Microsoft.Testing.Extensions.CodeCoverage` 18.12.0; `coverage.config` excludes migrations (by namespace, so it works on Windows and Linux); `TestResults/` gitignored; line coverage 74% (Core 100%, Infrastructure 18%) | ✅ `7cd6669` |
-| 6 · negative tests: a failing test exits 2, zero tests run exits 8, 0 migration classes in the report | ✅ |
-| 7 · docs: 10-Testing (platform, exit codes, coverage), ENGINEERING-STANDARDS (new TEST-8, DoD), 06-Architecture, 09-Roadmap (item ✅), LEARNING-PATH 2.2, README, CLAUDE.md (commands), STATUS | ✅ |
-
-Notes from this item:
-- In xUnit v3 `TheoryData<T>` holds rows (`TheoryDataRow<T>`): in a 
-  collection expression a bare `null` becomes a null *row*, not a row 
-  with a null value. Warnings as errors turned it into a build error 
-  (CS8625); write `(string?)null`.
-- XML comments cannot contain `--` (second time, after item 2): an 
-  invalid `coverage.config` was reported as "does not exist or is not 
-  valid" (exit 5).
-- Coverage numbers depend on the tool and the exclusions: compare only 
-  runs made the same way.
-- Not adopted on purpose: keeping the VSTest packages "for 
-  compatibility" (Visual Studio runs MTP natively); a coverage threshold 
-  (CI will show a summary, not gate on a percentage).
+**Next action**: create `feature/<name>` for the CI (roadmap phase 2, 
+item 4: locked restore, build, format check, unit tests, coverage 
+summary on PRs; least-privilege permissions, actions pinned by SHA; 
+Dependabot, CodeQL, secret scanning; ruleset on `main`) and plan it step 
+by step. Study first: LEARNING-PATH 2.3.
 
 ### Coherence check (2026-11-23)
 
@@ -326,6 +302,36 @@ Notes from this item:
   minor/major package upgrades (e.g. `System.IdentityModel.Tokens.Jwt` 
   8.23, .NET 11 packages).
 
+**Phase 2, item 3 — Test platform** 
+([PR #8](https://github.com/nilde790/sound-revival/pull/8), merged 
+2026-11-26, merge commit `f01d8ba`): T5 closed. Final check: build 0 
+warnings, 223/223 tests on xUnit v3 + Microsoft.Testing.Platform (also 
+in Visual Studio's Test Explorer), format clean, locked restore OK, 
+coverage report generated with migrations excluded.
+
+| Step | State |
+|---|---|
+| 1 · branch + baseline: 223 tests, coverlet line coverage 43.75% (Core 99.25%, Infrastructure 6% with migrations) | ✅ `f207a5a` |
+| 2 · `global.json` opts `dotnet test` into MTP; negative test: the VSTest project is refused (exit 1) | ✅ `6c6ae54` |
+| 3–4 · `xunit.v3` 4.0.3 (MTP v2 by default), `OutputType` `Exe`; `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`, `coverlet.collector` removed; CS8625 in 5 `TheoryData` collection expressions fixed with `(string?)null`; Test Explorer checked in VS | ✅ `6c6ae54` |
+| 5 · `Microsoft.Testing.Extensions.CodeCoverage` 18.12.0; `coverage.config` excludes migrations (by namespace, so it works on Windows and Linux); `TestResults/` gitignored; line coverage 74% (Core 100%, Infrastructure 18%) | ✅ `7cd6669` |
+| 6 · negative tests: a failing test exits 2, zero tests run exits 8, 0 migration classes in the report | ✅ |
+| 7 · docs: 10-Testing (platform, exit codes, coverage), ENGINEERING-STANDARDS (new TEST-8, DoD), 06-Architecture, 09-Roadmap (item ✅), LEARNING-PATH 2.2, README, CLAUDE.md (commands), STATUS | ✅ `f2c5543` |
+
+Notes from this item:
+- In xUnit v3 `TheoryData<T>` holds rows (`TheoryDataRow<T>`): in a 
+  collection expression a bare `null` becomes a null *row*, not a row 
+  with a null value. Warnings as errors turned it into a build error 
+  (CS8625); write `(string?)null`.
+- XML comments cannot contain `--` (second time, after item 2): an 
+  invalid `coverage.config` was reported as "does not exist or is not 
+  valid" (exit 5).
+- Coverage numbers depend on the tool and the exclusions: compare only 
+  runs made the same way.
+- Not adopted on purpose: keeping the VSTest packages "for 
+  compatibility" (Visual Studio runs MTP natively); a coverage threshold 
+  (CI will show a summary, not gate on a percentage).
+
 **Baseline before phase 2** (measured 2026-11-23): clean build with 0 
 warnings, 220/220 tests green, no vulnerable packages (transitive 
 included). Not yet clean: 66 whitespace violations from 
@@ -385,7 +391,7 @@ The docs branch was merged ([PR #5](https://github.com/nilde790/sound-revival/pu
 
 1. ✅ Core + Infrastructure split (ADR-011), merged via PR #6.
 2. ✅ Build quality (B1–B3, B6), merged via PR #7.
-3. ✅ Test platform (T5), on `feature/test-platform`: PR pending (§1).
+3. ✅ Test platform (T5), merged via PR #8.
 4. **Next**: CI → integration tests (T4), so every later PR is checked 
    automatically.
 5. `14-DevOps.md` and the deployment ADR come right before the deploy 
@@ -406,7 +412,5 @@ explains, gives hints on other examples and reviews each file against the
 standards.
 
 ---
-*Last updated: 2026-11-26 — phase 2 item 3 (test platform) complete on 
-`feature/test-platform`: xUnit v3 on Microsoft.Testing.Platform, Microsoft 
-code coverage with migrations excluded; T5 closed. Next: push and PR 
-into `main` (§1).*
+*Last updated: 2026-11-26 — PR #8 (test platform) merged into `main`; 
+branch deleted. Next: phase 2 item 4, GitHub Actions CI (§1).*
