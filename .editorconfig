@@ -1,0 +1,57 @@
+# Editor and code style settings for the whole repository.
+# Read by Visual Studio, VS Code, Rider and `dotnet format`.
+# Only deliberate choices are listed; everything else keeps the .NET defaults.
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+# end_of_line is left unset on purpose: .gitattributes normalizes line
+# endings, so each machine keeps its native ones (CRLF on Windows, LF in CI).
+
+[*.md]
+# Two trailing spaces are a line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{json,xml,csproj,props,targets,slnx,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+# Namespaces and usings
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+# Unused usings (STYLE-3)
+dotnet_diagnostic.IDE0005.severity = warning
+
+# Naming: private constants and static readonly fields are PascalCase
+# (the more specific rule wins over the _camelCase one below)
+dotnet_naming_rule.private_constants_pascal.symbols = private_constants
+dotnet_naming_rule.private_constants_pascal.style = pascal_case
+dotnet_naming_rule.private_constants_pascal.severity = warning
+dotnet_naming_symbols.private_constants.applicable_kinds = field
+dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+dotnet_naming_symbols.private_constants.required_modifiers = const
+dotnet_naming_rule.private_static_readonly_pascal.symbols = private_static_readonly
+dotnet_naming_rule.private_static_readonly_pascal.style = pascal_case
+dotnet_naming_rule.private_static_readonly_pascal.severity = warning
+dotnet_naming_symbols.private_static_readonly.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_readonly.required_modifiers = static, readonly
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# Naming: other private fields are _camelCase
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel_case
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel_case.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case.required_prefix = _
+
+# Generated code: never reformat EF Core migrations
+[**/Migrations/*.cs]
+generated_code = true
