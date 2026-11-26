@@ -25,9 +25,12 @@ warnings with warnings as errors and analyzers on, 223/223 tests,
 `dotnet format --verify-no-changes` clean, locked restore OK, no 
 vulnerable packages, `has-pending-model-changes` → no changes; app 
 started on http :5150: `/openapi/v1.json` 200 (OpenAPI 3.1.1, all 
-paths), `DELETE /api/listings/{id}` without token 401. Not checked: 
-endpoints that hit PostgreSQL (Docker was off); worth one Postman pass 
-before the PR (EF Core and Npgsql got patch updates).
+paths), `DELETE /api/listings/{id}` without token 401. Against 
+PostgreSQL on https :7196: register 200, duplicate 400 (`23505` path), 
+login 200, create listing 201 + `Location`, case-insensitive search 
+with `sort=price_asc` 200 (finds the new listing), detail 200 with 
+seller. Test data left: user `bq-…@example.test`, listing 
+"BQ Stratocaster …".
 
 **Next action**: push `feature/build-quality` and open the PR into `main` 
 (only when the developer asks). Merge with a **merge commit**, not 
