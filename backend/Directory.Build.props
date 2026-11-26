@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Build settings shared by every project under backend/.
+    MSBuild imports this file automatically (it walks up from each .csproj).
+  -->
+  <PropertyGroup>
+    <!--
+      Lock files: each project gets a packages.lock.json with the full resolved
+      dependency tree (transitive packages included, with content hashes).
+      Locally the lock file updates on restore; CI restores in locked mode
+      (dotnet restore with the locked-mode option) and fails if it is out of date.
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>
