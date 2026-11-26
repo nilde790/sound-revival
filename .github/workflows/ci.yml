@@ -42,5 +42,14 @@ jobs:
       - name: Check formatting
         run: dotnet format SoundRevival.slnx --verify-no-changes --no-restore
 
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: Test
-        run: dotnet test SoundRevival.slnx -c Release --no-build
+        run: dotnet test SoundRevival.slnx -c Release --no-build --coverage --coverage-output-format cobertura --coverage-settings coverage.config
+
+      - name: Coverage summary
+        run: |
+          dotnet reportgenerator -reports:"TestResults/*.cobertura.xml" -targetdir:coverage-report -reporttypes:MarkdownSummaryGithub
+          cat coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
