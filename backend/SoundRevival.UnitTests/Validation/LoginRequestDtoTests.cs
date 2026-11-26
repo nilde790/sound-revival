@@ -6,7 +6,7 @@ public class LoginRequestDtoTests
 {
     private static LoginRequestDto CreateValidRequest() => new()
     {
-        Email = "mario@example.com",
+              Email = "mario@example.com",
         Password = "Password1"
     };
 
